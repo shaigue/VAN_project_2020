@@ -1,5 +1,6 @@
 \documentclass{article}
 \usepackage{amsmath}
+\usepackage{amssymb}
 
 \title{VAN final project report}
 \date{2020-05-01}
@@ -79,12 +80,154 @@
 	% TODO: Introduce the paper(s) topic. Describe how the paper fits in with the contents of this course, provide a brief background (literature review) and explain why the problem is important
 	\section{Preliminary material and problem formulation}
 	% TODO: Present a description of relevant notations and definitions, define mathematically the problem addressed by the paper(s), and summarize any preliminary mathematical material used in the paper(s).
+	In this Work we deal we address 2 papers written on the subject of \textbf{Active sensing and Observation Correlation Modelling},
+	we will split our discussion to the 2 papers, paper (1) will refer to \textbf{Observation Modelling for Vision-Based Target Search by Unmanned Aerial Vehicles}, and paper (2) will refer to \textbf{Modelling Observation Correlation for Active Exploration and Robust Object Detection}.
+	\subsection{paper (1)}
+	
+	\subsubsection{Notations and definitions}
+	
+	\begin{itemize}
+		\item $\mathcal{G}$ - this is the set of all blocks inside the occupancy greed of the all area to
+		search in.
+		\item $g \in \mathcal{G}$ - a single cell inside of the occupancy grid.
+		\item $\delta_g$ - does the cell $g$ has an object in it? $\delta_g = 1$ means yes, $\delta_g = 0$ means no. 
+		\item $\mathcal{Z} \subset \mathbb{R}^3$ - this is the euclidean space that the drone is allowed to occupy. 
+		\item $t \in \mathbb{N}$ - this is the time, desecrate.	
+		\item $z_t \in \mathcal{Z}$ - this is the 3D location of the object at time $t$.
+		\item $G_t \subset \mathcal{G}$ - this is the subset of all the observed grid cells at time $t$.
+		\item $s_g^t \in \mathbb{R}$ - this is score that the classifier outputted about an object being in cell $g$ at the observation taken at time $t$.   
+		\item $d^t_g = (s_g^t, z_t)$ - this are our observations in the article, it is a tuple of the position of the robot and the classifier score at time $t$ and cell $g$.
+		\item $D_g^t = \{d_g^r|r \leq t\}$, $D^t=\{D_g^t|g\in\mathcal{G}\}$ - this is the set of all the observations obtained about grid cell $g$ until(including) time $t$. 
+		\item $\Delta = \{\delta_g|g\in\mathcal{G}\}$ - the joint R.V. of all the grid cells
+		\item $D^{+t},D^{-t}$ - the first relates to the past observation, up to time $t$, with - sign, and the later refers to the future observations that we will have after the current time up until some finite horizon $t'$. 
+	\end{itemize}
+
+	\subsubsection{Problem definition}
+	The aim of this article is to find a way to estimate the probability of finding some object(for example, a victim in a search and rescue mission) in a given location in space. It tries to so without assuming that different observation of the same location are independent of each other. We split the search area to grid cells - $\mathcal{G}$, transforming it to an estimation problem of a finite number of random variables - the probability for each $g \in \mathcal{G}$ to contain an object $\delta_g$, given all the past observations of this specific grid cell until time $t$, $D_g^t$, i.e. estimating $p(\delta_g|D_g^t)$. And to update that belief given new observation of the same grid cell $d_g^{t_1}$ on some time in the future, $t_1>t$. \\
+	
+	The second problem discussed in the paper is how to choose a path such that the overall uncertainty of the scene will be minimized.
+	Uncertainty is described as conditional Entropy, $H(\Delta|D^t)$, which measures how much $\Delta$ is uncertain. The path that we take will determine the observations obtained, and thus how certain we will be after collecting the observations. This is why we need to find a way to plan the actions such that $H(\Delta|D^t)$ will be minimized.
+	
+	
+	\subsection{Paper (2)}
+	\subsubsection{Notations and definitions}
+	\begin{itemize}
+		\item $x^i$ - this is the point in 2D space in time $i$ in the sequence of points in the trajectory,
+		$x^i \in \mathbb{R}^2 \times SO(2)$ where $SO(2)$ denotes all the transformations that represent 2D orientation.
+		\item $x^{0:k}$ - this is the robot's trajectory up until time $k$ which is the sequence of points and orientation in 2D space.    
+		\item $c_{mot}(x^{0:k})$ - this is the cost associated with the motion along a given trajectory(i.e., time, fuel, other operational costs).
+		\item $y_i, Y_i, (u_i, v_i)$ - $Y_i$ is an object hypothesis, in the spatial location $(u_i, v_i)$,
+		and $y_i$ is the actual value at that point. $Y_i$ is a binary random variable. 
+		\item $a_i$ - this our decision about is the object hypothesis $i$ is real or not(is $Y_i=1$). It is binary valued, $a_i=1$ means that object hypothesis $i$ is accepted, $0$ if rejected.
+		\item $\xi_{dec}$ - this is a cost function for the accepting or rejecting the object hypothesis(decision cost).
+		$\xi_{dec} : \{accept,reject\}\times\{object,no-object\}\rightarrow\mathbb{R}$ 
+		\item $Q$ - this is the number of object hypothesis in the scene, starts at 0, and is incremented each time the object classifier fires up. 
+		***EDIT***
+		\item $\pi$ - this is the plan, a trajectory and decision actions $\{x^{0:k},a_{0:Q}\}$.
+		\item $c_{det}$ - this is the price associated for the decision making about is there an object in a given object hypothesis. Because we don't have access to the ground truth - is there truly a object there or not,
+		we cannot calculate directly the cost function $\xi_{dec}(y,a)$, but we take the expectation of it over our current distribution of $y_i$, $c_{det}(x^{0:k},a)=\mathbb{E}_{y|x^{0:k}}[\xi_{dec}(a,y)]$ where $y$ is a vector of all object hypothesis, and $a$ is a vector of all of the decision actions we make***EDIT***  
+		\item $z^k$ - the observation obtained in time $k$ from view point $x^k$. (big $Z$ refers to the Random Variable).
+		\item $\mathcal{T}^k = {(x^1,z^1),...,(x^k,z^k)}$ - this is the history of all view point and observations pair.
+		\item $\Psi$ - this is used as a symbol for all the environment's random variables.
+		\item $\alpha = z^k \perp \mathcal{T}^{k-1}$ - a random variable that states "is the k'th observation correlated with the history of observations?"
+	\end{itemize}
+	\subsubsection{Problem formulation}
+	**Optimal plan
+	the problem addressed in the paper is finding $\pi^*$, the optimal plan with respect to added motion cost and decision cost:
+	\begin{equation}
+	\pi^* = \underset{\pi}{argmin}[c_{mot}(x^{0:k}) + c_{dec}(x^{0:k},a^{1:Q})]
+	\end{equation}
+	another consideration is, in order to correctly estimate $c_{det}(x^{0:k},a^{0:k})=\mathbb{E}_{y|x^{0:k}}[\xi_{dec}(y^{1:Q},a^{1:Q})]$ 
+	we need a way to compute $y|x^{0:k}$, both 
+	after we get the measurements from already visited trajectory, meaning that we need to have a method for incorporating information acquired from measurements, ***EXPLAIN MORE***
+	and a method to predict(***an observation model?***) how our belief over $y$ will change when we take a certain trajectory. The paper does not assume independence between new and past observations, and tries to model the correlations between observation from nearby viewpoints.  
+	
+	\subsection{Mathematical material used in the papers}
+	\begin{itemize}
+		\item Gaussian Process - The Mathematical definition of a Gaussian Process (GP) is:
+		 a set of R.V.'s $\{X_i\}_{i \in I}$ such that for every finite subset $J \subseteq I$, $\{X_i\}_{i \in J}$ is multivariate normal.
+		 Here it is used as a method for modeling. This is done by assuming that all of the sampled data is distributed as a GP, with some covariance and mean kernel functions that given the index of the R.V. 
+		 (e.g., if the R.V. is $X_t$ then the index is $t$), we can have the mean and covariance. for example: \\
+		 Let $I=[0,\inf]$ indicate the time, and ${X_i} \sim \mathcal{GP}(m(\cdot), k(\cdot,\cdot))$, so for each finite set of time-points
+		 $\{X_{t_1},X_{t_2},...,X_{t_n}\} \sim N(\mu,\Sigma)$ , and the mean and covariance are determined by the kernel functions 
+		 $m$ and $k$, such that $\mu_i = m(t_i)$, and $\Sigma_{i,j} = k(t_i, t_j)$. We can use the GP to predict the value of $X_t$ when we have known data-points $\{x_{t_1},x_{t_2},...,x_{t_n}\}$  by considering the joint distribution of $\{X_{t_1},X_{t_2},...,X_{t_n},X_t\}$, 
+		 and then using Schur's compliment to get the conditional distribution $p(X_t|X_{t_1},X_{t_2},...,X_{t_n})$, and estimate the mean and uncertainty(covariance) of $X_t|data$.
+		\item Some Information Theory concepts - 
+		
+		\textbf{Entropy} - given a R.V. $X$, its Entropy $H(X)$ is given by $H(X)=E[-log(p(X))]$. It is usually regarded as a measure of how unpredictable a R.V. is. \\ 
+		
+		\textbf{Conditional Entropy} - $H(X|Y)$  this is the same as entropy, just now it is for the conditioned R.V., also fallows the formula $H(X,Y)=H(X|Y) + H(Y)$, and it can be regarded as the Entropy of $X$ after we have knowledge about $Y$.
+		It always fallows that $H(X|Y) \leq H(X)$. \\
+		  
+		\textbf{Mutual Information} - $I(X;Y)$, it is defined as $I(X;Y)=\mathbb{E}\left[log\frac{p(x,y)}{p(x)p(y)}\right]$ it is regarded as a measure of how informative the state of $Y$ is with respect to $X$ (it is symmetric), i.e. how much will knowing $Y$ will help us estimate $X$. if $X,Y$ are independent, it will be 0, otherwise it will be strictly positive.
+		It also always holds that: $I(X;Y)=H(X)-H(X|Y)$, intuitively this means that the M.I. is the difference of how unpredictable $X$ is without and with knowing $Y$.  
+		\item Myopic planner - a planner that looks only on the rewards of a short time in the future, not with a far horizon.
+		
+		\item \textbf{MSDE} - Mean Squared Detection Error - this is for evaluating the result of the robots estimations.
+		
+	\end{itemize}
+	
+	% math formulation of the problems
+	% extra math things
 	\section{Main contribution}
 	% TODO: A detailed discussion of the main results of the paper(s). This should include both a qualitative discussion and a mathematical presentation (i.e. show proofs, preferably in your own style).
 	\section{Implementation}
 	% TODO: Demonstrate the main results of the paper(s) using simulation and/or real-world experiments. You are free to choose the programming language as well as using open source software. This also includes testing the approaches under different conditions than those originally assumed in the paper(s), as well as extending approaches to unsupported settings/scenarios.
+	
 	\section{Discussion and Conclusions}
 	% TODO: Summarize the report and provide some criticism: identify weak points, unrealistic assumptions or aspects that could be improved and suggest possible directions (or extensions) for future research
+	***Summarize the report:***
+	*What have we covered in this report?*
+	
+	***Criticism***
+	
+	*unrealistic assumptions*
+	
+	- the paper assumes perfectly known results from the motion model(deterministic) and perfect localization and mapping of the surrounding, which greatly reduces the uncertainty, and prefect data association, and uses that to predict the correlation. but in fact in real measurements those are random variables, and they might benefit from the objects in the surrounding.
+	***EXPLORE 1*** - because it is in the course material.
+	
+	*weak point*
+	
+	- problem with both articles: to train the model we assume that we have training data of the exact same scene from before hand, but this is usually not the case, and the correlations usually highly depend on the environment(for example, different shadows, or topology of the ground) and could not be learned unless we have the exact or similar scene, and it does not generalizes ***is it correct?***
+	***EXPLORE 2*** - this is a very interesting weak point.
+	
+	- the papers assume that the decision actions(deciding is there an object in some place or not) is independent on the path planning, and could be done in the end of the process. but what if there beeing or not being an objects in a certain spot does relate to the motion planning? (like if the objects are things that we want to avoid like land mines, or things that have meaning about the way we should plan like traffic signs, or determinme the objective, like finding a halipad to land on?) 
+	***DESCRIBE SHORTLY***
+	
+	- what about a classifier that directly takes into account environmental features that might affect its predictions, when building such a classifier this should be more fitting to do, since we know about the inner workings of the classifier and model that more accurately given that knowledge, and incorporate that into the training, and give us also a measure of uncertainty? this seems more of the natural thing to do. state of the art in classifier technology has greatly improved in recent years since the papers were written. how this can change the results attained in the papers?
+	***EXPLORE 5*** - very interesting
+	
+	- In paper [2] we only address object hypothesis that we encounter by chance. Is it good? what if we miss an object all together?
+	***DESCRIBE SHORTLY***
+	
+	*aspects that could be improved*
+	
+	- is the position from which observations are taken really the best parameter to use to model the correlation? I think that it is not the case, it just happens that the things that determine the correlation (like relative position and orientation to the object, lighting and occlusions, other environment features that change over time) that can be estimated directly without going through the position.
+	***EXPLORE 3*** - also a very interesting point to explore.	
+		
+	*possible directions for future research*
+	
+	- both papers assume that different object hypothesis / grid cells are uncorrelated, and only assume correlations between different observations of the same object / grid cell. even that it is usually not the case, in search and rescue it is reasonable to assume that victims should be nearby, that text will be clustered in space, and that a computer, a keyboard and a chair will probably come together. it might be valuable not to neglect this correlation.
+	***EXPLORE 4***
+	
+	- what happens when we consider multiple object classes, and not only a single class? does it scale?
+	***DESCRIBE SHORTLY***
+	
+	- how to integrate different observation models that have significantly different correlation scheme?
+	***DESCRIBE SHORTLY***
+	
+	- what about changing environment, and object hypothesis that might change over time? (moving objects for example)
+	***DESCRIBE SHORTLY***
+	
+	- how do we model the future observations given the current state for planning purposes? the first paper criticizes the second one for assuming in that step that future observations are uncorelated to one another in the planning phase, which is a bit wrong.  
+	***DESCRIBE SHORTLY***
+	
+	- both papers use a GP for the observation model, and for predicting the correlations. might other methods offer greater benefit? should try out and compare
+	***DESCRIBE SHORTLY***
+	
+	% TODO: look at how to add refrences
+	
+	% TODO: how to reference equations
 	
   
 \end{document}
