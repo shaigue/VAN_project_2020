@@ -87,60 +87,80 @@
 	\subsubsection{Notations and definitions}
 	
 	\begin{itemize}
-		\item $\mathcal{G}$ - this is the set of all blocks inside the occupancy greed of the all area to
-		search in.
-		\item $g \in \mathcal{G}$ - a single cell inside of the occupancy grid.
-		\item $\delta_g$ - does the cell $g$ has an object in it? $\delta_g = 1$ means yes, $\delta_g = 0$ means no. 
-		\item $\mathcal{Z} \subset \mathbb{R}^3$ - this is the euclidean space that the drone is allowed to occupy. 
-		\item $t \in \mathbb{N}$ - this is the time, desecrate.	
-		\item $z_t \in \mathcal{Z}$ - this is the 3D location of the object at time $t$.
-		\item $G_t \subset \mathcal{G}$ - this is the subset of all the observed grid cells at time $t$.
-		\item $s_g^t \in \mathbb{R}$ - this is score that the classifier outputted about an object being in cell $g$ at the observation taken at time $t$.   
-		\item $d^t_g = (s_g^t, z_t)$ - this are our observations in the article, it is a tuple of the position of the robot and the classifier score at time $t$ and cell $g$.
-		\item $D_g^t = \{d_g^r|r \leq t\}$, $D^t=\{D_g^t|g\in\mathcal{G}\}$ - this is the set of all the observations obtained about grid cell $g$ until(including) time $t$. 
-		\item $\Delta = \{\delta_g|g\in\mathcal{G}\}$ - the joint R.V. of all the grid cells
-		\item $D^{+t},D^{-t}$ - the first relates to the past observation, up to time $t$, with - sign, and the later refers to the future observations that we will have after the current time up until some finite horizon $t'$. 
+		\item $\mathcal{G}$ - We divide our search area into grid-cells. This is the set of all the cells.
+		\item $g \in \mathcal{G}$ - A single grid cell.
+		\item $\delta_g$ - A RV that represents does cell $g$ has an object in it? $\delta_g = 1$ is yes, $\delta_g = 0$ is no. 
+		\item $\mathcal{Z} \subset \mathbb{R}^3$ - This is the sub-space that the drone is allowed to travel in. 
+		\item $t \in \mathbb{N}$ - Time, in desecrate steps.	
+		\item $z_t \in \mathcal{Z}$ - this is the 3D location of the drone at time $t$.
+		\item $G_t \subset \mathcal{G}$ - this is the subset of all the observed grid-cells at time $t$.
+		\item $s_g^t \in \mathbb{R}$ - Score that the classifier produced about an object being in cell $g$ observed at time $t$.   
+		\item $d^t_g = (s_g^t, z_t)$ - A data point, this is a tuple of a measurement(classifier score of cell $g$), at time $t$, and the drone's position at that time.
+		\item $D_g^t = \{d_g^r|r \leq t\}$, $D^t=\{D_g^t|g\in\mathcal{G}\}$ - The set of all the observations obtained about grid cell $g$ until(including) time $t$. 
+		\item $\Delta = \{\delta_g|g\in\mathcal{G}\}$ - Joint RV of all the grid cells occupancy.
+		\item $D^{+t},D^{-t}$ - 2 additional notations, the $-$ refers to all of the data-points up until time $t$, and $+$ refers to the future data-points that will be collected up until some finite time $t'$ in the future.
 	\end{itemize}
 
 	\subsubsection{Problem definition}
-	The aim of this article is to find a way to estimate the probability of finding some object(for example, a victim in a search and rescue mission) in a given location in space. It tries to so without assuming that different observation of the same location are independent of each other. We split the search area to grid cells - $\mathcal{G}$, transforming it to an estimation problem of a finite number of random variables - the probability for each $g \in \mathcal{G}$ to contain an object $\delta_g$, given all the past observations of this specific grid cell until time $t$, $D_g^t$, i.e. estimating $p(\delta_g|D_g^t)$. And to update that belief given new observation of the same grid cell $d_g^{t_1}$ on some time in the future, $t_1>t$. \\
+	The aim of this article is to estimate the probability of finding some object(for example, a victim in a search and rescue mission) in a given location in space. It tries to so without assuming that different observation of the same location are independent of each other. We split the search area to grid cells - $\mathcal{G}$, transforming it to an estimation problem of a finite number of random variables - the probability for each $g \in \mathcal{G}$ to contain an object $\delta_g$, given all the past observations of this specific grid cell until time $t$, $D_g^t$, i.e. estimating $p(\delta_g|D_g^t)$. And to update that belief given new observation of the same grid cell $d_g^{t_1}$ on some time in the future, $t_1>t$. \\
 	
-	The second problem discussed in the paper is how to choose a path such that the overall uncertainty of the scene will be minimized.
-	Uncertainty is described as conditional Entropy, $H(\Delta|D^t)$, which measures how much $\Delta$ is uncertain. The path that we take will determine the observations obtained, and thus how certain we will be after collecting the observations. This is why we need to find a way to plan the actions such that $H(\Delta|D^t)$ will be minimized.
-	
+	We need to consider how to model the correlation between different observations of the same object. The paper assumes independence between different grid cells.
+	To improve our estimation we need to choose a path such that the overall uncertainty of the scene will be minimized.
+	Uncertainty is described as conditional Entropy, $H(\Delta|D^t)$, which measures how much $\Delta$ is uncertain, after acquiring data-points. The path that we take will determine the observations obtained, and thus the posterior $p(\Delta|D^t)$. This motivates us to plan the trajectory such that $H(\Delta|D^t)$ will be minimized.
 	
 	\subsection{Paper (2)}
 	\subsubsection{Notations and definitions}
 	\begin{itemize}
-		\item $x^i$ - this is the point in 2D space in time $i$ in the sequence of points in the trajectory,
-		$x^i \in \mathbb{R}^2 \times SO(2)$ where $SO(2)$ denotes all the transformations that represent 2D orientation.
-		\item $x^{0:k}$ - this is the robot's trajectory up until time $k$ which is the sequence of points and orientation in 2D space.    
-		\item $c_{mot}(x^{0:k})$ - this is the cost associated with the motion along a given trajectory(i.e., time, fuel, other operational costs).
-		\item $y_i, Y_i, (u_i, v_i)$ - $Y_i$ is an object hypothesis, in the spatial location $(u_i, v_i)$,
-		and $y_i$ is the actual value at that point. $Y_i$ is a binary random variable. 
-		\item $a_i$ - this our decision about is the object hypothesis $i$ is real or not(is $Y_i=1$). It is binary valued, $a_i=1$ means that object hypothesis $i$ is accepted, $0$ if rejected.
-		\item $\xi_{dec}$ - this is a cost function for the accepting or rejecting the object hypothesis(decision cost).
+		\item $x^i$ - The 2D pose of the robot in at time $i$,
+		$x^i \in \mathbb{R}^2 \times SO(2)$ where $SO(2)$ denotes the orientation.
+		\item $x^{0:k}$ - The robot's trajectory form times $0$ to $k$.
+		\item $c_{mot}(x^{0:k})$ - The cost associated with the motion along a trajectory(time, fuel, other operational costs).
+		\item $y_i, Y_i, (u_i, v_i)$ - $Y_i$ is an object hypothesis, in location $(u_i, v_i)$,
+		$y_i$ is it's value. $Y_i$ is a binary random variable in the range $\{object,no-object\}$
+		\item $a_i$ - A \textbf{Decision action}. $a_i\in\{accept,reject\}$ that represents our decision on object hypothesis $Y_i$. 
+		\item $\xi_{dec}$ - \textbf{Decision Cost} function for accepting or rejecting the object hypothesis, based on it's true value.
 		$\xi_{dec} : \{accept,reject\}\times\{object,no-object\}\rightarrow\mathbb{R}$ 
-		\item $Q$ - this is the number of object hypothesis in the scene, starts at 0, and is incremented each time the object classifier fires up. 
-		***EDIT***
+		\item $Q$ - this is the number of object hypothesis in the scene.
 		\item $\pi$ - this is the plan, a trajectory and decision actions $\{x^{0:k},a_{0:Q}\}$.
-		\item $c_{det}$ - this is the price associated for the decision making about is there an object in a given object hypothesis. Because we don't have access to the ground truth - is there truly a object there or not,
-		we cannot calculate directly the cost function $\xi_{dec}(y,a)$, but we take the expectation of it over our current distribution of $y_i$, $c_{det}(x^{0:k},a)=\mathbb{E}_{y|x^{0:k}}[\xi_{dec}(a,y)]$ where $y$ is a vector of all object hypothesis, and $a$ is a vector of all of the decision actions we make***EDIT***  
-		\item $z^k$ - the observation obtained in time $k$ from view point $x^k$. (big $Z$ refers to the Random Variable).
-		\item $\mathcal{T}^k = {(x^1,z^1),...,(x^k,z^k)}$ - this is the history of all view point and observations pair.
-		\item $\Psi$ - this is used as a symbol for all the environment's random variables.
-		\item $\alpha = z^k \perp \mathcal{T}^{k-1}$ - a random variable that states "is the k'th observation correlated with the history of observations?"
+		\item $c_{det}(x^{0:k},a_{0:Q})$ - The Expectation of decision costs $\xi_{dec}(a_i,y_i)$, based on the belief we have over $Y$ (the joint of all $Y_i$) after traveling through trajectory $x^{0:k}$.
+		\begin{equation}
+		c_{det}(x^{0:k},a_{1:Q})=\mathbb{E}_{y|x^{0:k}}[\xi_{dec}(a_{1:Q},y)]
+		\end{equation}  
+		It is a way to estimate the total decision cost, we need this for planning, because we do not have access to the ground truth about the true value of $Y$.
+		\item $z^k$ - the observation obtained in time $k$ from view point $x^k$. (big $Z$ refers to the Random Variable). The domain is not specified in the paper, could be some classifier score, or something else.
+		\item $\mathcal{T}^k = {(x^1,z^1),...,(x^k,z^k)}$ - this is the history of all view point and observations pairs.
+		\item $\Psi$ - Symbol for the environment's RV necessary for accurately model the sensor's observation generation.
+		\item $\alpha = z^k \perp \mathcal{T}^{k-1}$ - RV that means "is the k'th observation correlated with the history of observations?"
 	\end{itemize}
 	\subsubsection{Problem formulation}
-	**Optimal plan
-	the problem addressed in the paper is finding $\pi^*$, the optimal plan with respect to added motion cost and decision cost:
+	The goal is:
+	given a start and an end point,
+	find the optimal plan, $\pi=(x^{0:k},a_{1:Q})$, that minimizes the total cost function:
 	\begin{equation}
 	\pi^* = \underset{\pi}{argmin}[c_{mot}(x^{0:k}) + c_{dec}(x^{0:k},a^{1:Q})]
 	\end{equation}
-	another consideration is, in order to correctly estimate $c_{det}(x^{0:k},a^{0:k})=\mathbb{E}_{y|x^{0:k}}[\xi_{dec}(y^{1:Q},a^{1:Q})]$ 
-	we need a way to compute $y|x^{0:k}$, both 
-	after we get the measurements from already visited trajectory, meaning that we need to have a method for incorporating information acquired from measurements, ***EXPLAIN MORE***
-	and a method to predict(***an observation model?***) how our belief over $y$ will change when we take a certain trajectory. The paper does not assume independence between new and past observations, and tries to model the correlations between observation from nearby viewpoints.  
+	[to simplify, we will write $a$ instead of $a_{1:Q}$ and the same for $Y,y$]
+	
+	To do so we need a way to model the posterior $Y|X^{0:k}$, both \textbf{(a)} after we have the available data, i.e. the history of measurements from time 0 to k -$\mathcal{T}^k$, to estimate the current belief,
+	and \textbf{(b)} a way to generate future measurements to estimate how the postirior will change after taking the trajectory.
+	
+	\textbf{(a)} can be formulated by:
+	\begin{equation}
+	p(Y|\mathcal{T}^k)
+	\end{equation}
+	
+	\textbf{(b)} can be formulated by obtaining the generative model:
+	\begin{equation}
+	p(Z^k|X^k,\mathcal{T}^{0:k-1})
+	\end{equation}
+	
+	To do so we assume that different object hypothesis are independent. In this article we don't assume that the different observations are conditionally independent given the robot's state(as we do in the course). To have conditional independence we need additional information about the environment(like lighting, occlusions, ...) denoted by $\Psi$, and fully modeling that is intractable. Instead we want a way to model correlation between current and past observations:
+	
+	\begin{equation}
+	p(z^k|y,x^k,\Psi) \approx p(z^k|y,x^k,\mathcal{T}^{k-1})
+	\end{equation}
+	
+	Another issue that has to be addressed is computation time. All of this should be done online, and the most computationally intensive task at hand is the planning stage. Because the we don't assume that observations are independent of each other, the problem is not a "Markov Chain" (as assumed in the course), thus trying to solve as an explicit POMDP model will be computationally complex. We need to develop an efficient method to sample future trajectories(forward search, instead of considering all possible options), and propagate the belief accordingly, such that the resulting plan will too far from the real optimal plan.
 	
 	\subsection{Mathematical material used in the papers}
 	\begin{itemize}
@@ -154,17 +174,17 @@
 		 and then using Schur's compliment to get the conditional distribution $p(X_t|X_{t_1},X_{t_2},...,X_{t_n})$, and estimate the mean and uncertainty(covariance) of $X_t|data$.
 		\item Some Information Theory concepts - 
 		
-		\textbf{Entropy} - given a R.V. $X$, its Entropy $H(X)$ is given by $H(X)=E[-log(p(X))]$. It is usually regarded as a measure of how unpredictable a R.V. is. \\ 
+		\textbf{Entropy} - given a R.V. $X$, its Entropy $H(X)$ is given by $H(X)=E[-log(p(X))]$. It is a measure of how unpredictable a R.V. is. \\ 
 		
-		\textbf{Conditional Entropy} - $H(X|Y)$  this is the same as entropy, just now it is for the conditioned R.V., also fallows the formula $H(X,Y)=H(X|Y) + H(Y)$, and it can be regarded as the Entropy of $X$ after we have knowledge about $Y$.
-		It always fallows that $H(X|Y) \leq H(X)$. \\
+		\textbf{Conditional Entropy} - $H(X|Y)$  this is the same as entropy, just now it is for the conditioned R.V., also fallows the formula $H(X,Y)=H(X|Y) + H(Y)$, and means "the Entropy of $X$ after we have know $Y$".
+		This relation always holds: $H(X|Y) \leq H(X)$. \\
 		  
-		\textbf{Mutual Information} - $I(X;Y)$, it is defined as $I(X;Y)=\mathbb{E}\left[log\frac{p(x,y)}{p(x)p(y)}\right]$ it is regarded as a measure of how informative the state of $Y$ is with respect to $X$ (it is symmetric), i.e. how much will knowing $Y$ will help us estimate $X$. if $X,Y$ are independent, it will be 0, otherwise it will be strictly positive.
-		It also always holds that: $I(X;Y)=H(X)-H(X|Y)$, intuitively this means that the M.I. is the difference of how unpredictable $X$ is without and with knowing $Y$.  
-		\item Myopic planner - a planner that looks only on the rewards of a short time in the future, not with a far horizon.
+		\textbf{Mutual Information} - $I(X;Y)$, it is defined as $I(X;Y)=\mathbb{E}\left[log\frac{p(x,y)}{p(x)p(y)}\right]$ it is  a measure of how informative the state of $Y$ is with respect to $X$ (it is symmetric). If $X,Y$ are independent, it will be 0, otherwise it will be strictly positive.
+		It also always holds that: $I(X;Y)=H(X)-H(X|Y)$, This means that the M.I. is the difference of how unpredictable $X$ is without and with knowing $Y$.  
 		
-		\item \textbf{MSDE} - Mean Squared Detection Error - this is for evaluating the result of the robots estimations.
+		\item \textbf{MSDE} - Mean Squared Detection Error - used for evaluating the estimations result's in paper[1].
 		
+		$$MSDE = \frac{1}{|\mathcal{G}|}\sum_{g \in \mathcal{G}}[\delta_g - P(\delta_g = 1|D_g^t)]^2 $$		
 	\end{itemize}
 	
 	% math formulation of the problems

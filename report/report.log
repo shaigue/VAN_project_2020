@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (MiKTeX 2.9.6500) (preloaded format=pdflatex 2020.1.4)  19 JAN 2020 10:12
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (MiKTeX 2.9.6500) (preloaded format=pdflatex 2020.1.4)  20 JAN 2020 09:03
 entering extended mode
 **./report.tex
 (report.tex
@@ -143,36 +143,28 @@ File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 90.
  [3]
-Underfull \hbox (badness 10000) in paragraph at lines 106--107
+Underfull \hbox (badness 10000) in paragraph at lines 105--106
 
  []
 
-[4]
-Overfull \hbox (62.31198pt too wide) in paragraph at lines 139--144
-\OT1/cmr/m/n/10 another con-sid-er-a-tion is, in or-der to cor-rect-ly es-ti-ma
-te $\OML/cmm/m/it/10 c[]\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 x[]; a[]\OT1/cmr/m/n/
-10 ) = \U/msb/m/n/10 E[]\OT1/cmr/m/n/10 [\OML/cmm/m/it/10 []\OT1/cmr/m/n/10 (\
-OML/cmm/m/it/10 y[]; a[]\OT1/cmr/m/n/10 )]$
- []
-
-[5]
-Underfull \hbox (badness 10000) in paragraph at lines 157--158
+[4] [5]
+Underfull \hbox (badness 10000) in paragraph at lines 177--178
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 159--161
+Underfull \hbox (badness 10000) in paragraph at lines 179--181
 
  []
 
 [6]
-Overfull \hbox (19.9173pt too wide) in paragraph at lines 186--188
+Overfull \hbox (19.9173pt too wide) in paragraph at lines 206--208
 []\OT1/cmr/m/n/10 - the pa-per as-sumes per-fect-ly known re-sult-s from the mo
 -tion mod-el(deterministic)
  []
 
 [7]
-Overfull \hbox (0.63954pt too wide) in paragraph at lines 219--221
+Overfull \hbox (0.63954pt too wide) in paragraph at lines 239--241
 []\OT1/cmr/m/n/10 - what about chang-ing en-vi-ron-men-t, and ob-jec-t hy-poth-
 e-sis that might change
  []
@@ -181,11 +173,11 @@ e-sis that might change
 Here is how much of TeX's memory you used:
  1410 strings out of 494398
  16151 string characters out of 3173190
- 76370 words of memory out of 3000000
+ 75370 words of memory out of 3000000
  5548 multiletter control sequences out of 15000+200000
  11503 words of font info for 45 fonts, out of 3000000 for 9000
  14 hyphenation exceptions out of 8191
- 30i,8n,31p,767b,197s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 30i,8n,31p,753b,197s stack positions out of 5000i,500n,10000p,200000b,50000s
 <C:/Users/shaig/AppData/Local/Programs/MiKTeX 2.9/fonts/type1
 /public/amsfonts/cm/cmbx10.pfb><C:/Users/shaig/AppData/Local/Programs/MiKTeX 2.
 9/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/shaig/AppData/Local/Progr
@@ -203,7 +195,7 @@ ers/shaig/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy
 10.pfb><C:/Users/shaig/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/ams
 fonts/cm/cmsy7.pfb><C:/Users/shaig/AppData/Local/Programs/MiKTeX 2.9/fonts/type
 1/public/amsfonts/symbols/msbm10.pfb>
-Output written on report.pdf (8 pages, 189295 bytes).
+Output written on report.pdf (8 pages, 192474 bytes).
 PDF statistics:
  85 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
