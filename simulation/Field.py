@@ -329,6 +329,7 @@ if __name__ == "__main__":
     # f = Field(10, 10, 3, 7, range_decay=0.2)
     f = Field(10, 10, 3, 7,
         noise_ind=0.3,
+        range_decay=0.2,
         lights=[(5,5)],
         obstacles=[(3,1),(3,2),(3,3),(3,0),(3,4)])
     explore_field(f)
