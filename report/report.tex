@@ -3,7 +3,7 @@
 
 \title{VAN final project report}
 \date{2020-05-01}
-\author{Shai Guendelman, Avnom Hanohov}
+\author{Shai Guendelman, Avnum Hanuhov}
 
 \begin{document}
 	% this is how to comment with '%'
@@ -77,10 +77,30 @@
 	
 	\section{Introduction and overview}
 	% TODO: Introduce the paper(s) topic. Describe how the paper fits in with the contents of this course, provide a brief background (literature review) and explain why the problem is important
+	Papers "Observation Modelling for Vision-Based Target Search by Unmanned Aerial Vehicles, W.T. Luke Teacy, Simon J. Julier, Renzo De Nardi, Alex Rogers, Nicholas R. Jenning"[1] and "Modelling Observation Correlations for Active Exploration and Robust Object Detection by Javier Velez, Garrett Hemann, Albert S. Huang, Ingmar Posner and Nicholas Roy"[2], address the issues in existing state of the art observation models in classification and detection of camera images. \\
+	
+	Existing solutions describe an idealized model where different observations of the same object or area are considered independent, which in turn leads to misleading or over-confident results. \\
+	The papers suggest new models in which observations are treated as correlated. However, the implementation suggested is different between them. \\
+	
+	The course's purpose is to present and discuss different methods that answer the key questions in autonomous mobile systems: \\
+	1. Where am I? \\
+	2. What is the surrounding environment?\\
+	3. What should I do next? Where am I going?\\
+	4. How to get there?\\
+	The goal of the papers listed above is to present new and improved models to answer these questions with higher accuracy, by treating observations as correlated. \\
+	
+	The problem in existing approaches is in the performance of their algorithms and in the broad number of assumptions they are making. \\
+	These problems lead to wrong classification of objects, inaccurate modelling of the environment and non optimal robot movement. \\
+	The work of W.T. L.Teacy[1] et al. refers to the issues listed above with regards to the performance of UAV's in gathering information about objects on the ground. To address these issues, they develop a Gaussian Process based observation model that characterises the correlation between classifier outputs as a function of UAV position. They then use this to fuse classifier observations from a sequence of images and to plan the UAV's movement. \\
+	The work of J.Velez et al. presents an online planning algorithm which learns an explicit model of the spatial dependence of object detection and generates plans which maximize the expected performance of the detection, and by extension the overall plan performance. %should I include paper 2 purple?
 	\section{Preliminary material and problem formulation}
 	% TODO: Present a description of relevant notations and definitions, define mathematically the problem addressed by the paper(s), and summarize any preliminary mathematical material used in the paper(s).
 	\section{Main contribution}
 	% TODO: A detailed discussion of the main results of the paper(s). This should include both a qualitative discussion and a mathematical presentation (i.e. show proofs, preferably in your own style).
+	The first paper by W.T. L.Teacy et al. focused on building a new observation model, that achieved up to 66 percent greater accuracy than existing approaches at detecting objects. \\
+	
+	In the second paper, the authors presented a sensor model that approximates the correlation in observations made from similar vantage points, and an efficient planning algorithm that balances moving to highly informative vantage points with the motion cost of taking detours.
+	
 	\section{Implementation}
 	% TODO: Demonstrate the main results of the paper(s) using simulation and/or real-world experiments. You are free to choose the programming language as well as using open source software. This also includes testing the approaches under different conditions than those originally assumed in the paper(s), as well as extending approaches to unsupported settings/scenarios.
 	\section{Discussion and Conclusions}
