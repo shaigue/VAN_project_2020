@@ -62,12 +62,8 @@ class Field:
         self.lights = lights
         self.obstacles = obstacles
 
-        # make a blank board containing `Q` objects, randomly placed
-        self.objects = set()
-        while len(self.objects) < Q:
-            x = randint(0, self.M)
-            y = randint(0, self.N)
-            self.objects.add((x,y))
+        # make a board containing `Q` objects, randomly placed
+        self.randomize_objects()
         
         self.object_grid = np.zeros((self.M, self.N))
         for obj in self.objects:
@@ -89,6 +85,13 @@ class Field:
         self.light_grid[self.light_grid > 1] = 1
 
 
+    def randomize_objects(self):
+        self.objects = set()
+        while len(self.objects) < self.Q:
+            x = randint(0, self.M)
+            y = randint(0, self.N)
+            if self.obstacles is None or (x,y) not in self.obstacles:
+                self.objects.add((x,y))
         
 
     def check_occlusion(self, x0, y0, x1, y1):
@@ -157,11 +160,10 @@ class Field:
         end_x = min(x + self.F + 1, self.M)
         end_y = min(y + self.F + 1, self.N)
         
-
         for x1 in range(start_x, end_x):
             for y1 in range(start_y, end_y):
                 # is there an object?
-                I_y = self.object_grid[x1, y1]
+                I_y = int((x1,y1) in self.objects) # self.object_grid[x1, y1]
                 # is there occlusion?
                 I_occ = 0
                 if self.check_occlusion(x, y, x1, y1):
@@ -172,12 +174,12 @@ class Field:
                 r = l2_norm(x, y, x1, y1)
 
                 Z[(x1,y1)] = \
-                    (1 - I_occ) * (0.5 + (I_y - 0.5) * l * np.exp(-self.range_decay * r)) + \
+                    (0.5 + (I_y * (1 - I_occ) - 0.5) * l * np.exp(-self.range_decay * r)) + \
                          0.5 * self.noise_ind * randn()
-                if Z[(x1,y1)] < 0:
-                    Z[(x1,y1)] = 0
-                if Z[(x1,y1)] > 1:
-                    Z[(x1,y1)] = 1
+                # if Z[(x1,y1)] < 0:
+                #     Z[(x1,y1)] = 0
+                # if Z[(x1,y1)] > 1:
+                #   Z[(x1,y1)] = 1
         
         return Z
 
@@ -323,12 +325,12 @@ def explore_field_occlusions(field: Field):
 
 if __name__ == "__main__":
     # simple field test
-    # f = Field(10, 10, 2, 7)
-    # f = Field(10, 10, 2, 7, lights=[(5,5)], obstacles=[(2,1),(2,2),(2,3)])
-    # f = Field(10, 10, 2, 7, noise_ind=0.3)
-    # f = Field(10, 10, 3, 7, range_decay=0.2)
-    f = Field(10, 10, 3, 7,
-        noise_ind=0.3,
+    #f = Field(10, 10, 2, 7)
+    #f = Field(10, 10, 2, 7, lights=[(5,5)], obstacles=[(2,1),(2,2),(2,3)])
+    #f = Field(10, 10, 2, 7, noise_ind=0.3)
+    #f = Field(10, 10, 3, 7, range_decay=0.2)
+    f = Field(30, 30, 3, 7,
+        noise_ind=0.2,
         range_decay=0.2,
         lights=[(5,5)],
         obstacles=[(3,1),(3,2),(3,3),(3,0),(3,4)])
