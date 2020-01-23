@@ -209,7 +209,25 @@
 	% TODO: A detailed discussion of the main results of the paper(s). This should include both a qualitative discussion and a mathematical presentation (i.e. show proofs, preferably in your own style).
 	The first paper by W.T. L.Teacy et al. focused on building a new observation model, that achieved up to 66 percent greater accuracy than existing approaches at detecting objects. \\
 	
+	They treat the search region as a grid and for each cell they hold a set of observations, Dg = {dg|r<=t}.  
+	
+	The goal is to determine the probability that each cell is occupied (DeltaG = 1) or not (DeltaG = 0), and to continually refine these probabilities given visual observations made by the UAV.
+	
+	The goal is to find P(Delta|D)
+	To model the above distribution (the distribution of the target locations given previously observed data) they first model 3 main components: Predictive model, an observation model and a planner.
+	The predictive model computes the posterior probability that each cell is occupied. With the use of Bayes rule this is calculated as follows:
+	<Eq 1 from paper>
+	
+	Observation Modelling: They develop their observation model using a Gaussian Process over classifier scores. For any given cell, g, they model the classifier score sgt as a GP dependent on the UAV's position at the time of observation. Equation x, y, z from the dictionary. \\
+	
+	
 	In the second paper, the authors presented a sensor model that approximates the correlation in observations made from similar vantage points, and an efficient planning algorithm that balances moving to highly informative vantage points with the motion cost of taking detours.
+
+	A Sensor Model for Object Detection:	
+	In order to compute the expected cost of decision actions used in the planning algorithm, the authors of [2] had to estimate the the probability of objects existing in the world given the observations the robot might see while executing the motion plan. This estimation requires a probabilistic model of the object detector because it will allow to infer the distribution over the object given measurements. The viewpoint x, of the robot, must be taken into consideration because sensor characteristic vary as the robot moves around the object. So, the relationship between the object and the measurements and viewpoint can be written explicitly as p(y|z,x).
+	%Need to expand on the observation model and perception fields here
+	
+	
 	
 	\section{Implementation}
 	% TODO: Demonstrate the main results of the paper(s) using simulation and/or real-world experiments. You are free to choose the programming language as well as using open source software. This also includes testing the approaches under different conditions than those originally assumed in the paper(s), as well as extending approaches to unsupported settings/scenarios.
