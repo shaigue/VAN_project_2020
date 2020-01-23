@@ -196,55 +196,35 @@
 	
 	\section{Discussion and Conclusions}
 	% TODO: Summarize the report and provide some criticism: identify weak points, unrealistic assumptions or aspects that could be improved and suggest possible directions (or extensions) for future research
-	***Summarize the report:***
-	*What have we covered in this report?*
+	\subsection{Summery}
+	In this report we examined 2 articles written on the subjects `active exploration` and `observation correlation modeling`,
+	in the context of robust object detection. From the papers results we can clearly see that it is beneficial in terms of classification accuracy to consider (a) the planning aspect, by including in the objective function(that defines our optimal plan) a term that relates to the uncertainty in the class estimations, and (b) in integrating new observation, while not assuming that observations are completely independent given the robot's state. Both papers give some rough models that can be used for this, but probably too simplistic at their current form.
 	
-	***Criticism***
 	
-	*unrealistic assumptions*
+	\subsection{Criticism}
+	*\textbf{Model Training} - both papers train their models on data that is very simmilar to that that they test on, 
+	which is not optimal, as we cannot expect to have training data available of every environment, and each environment has it's own specific correlations model. This is some how true in paper [1], but there only the parameters of the GP are learned, so this model can generalize more easily, but in paper [2] the resulting model is higly fitted to a spacific enfironment, and will not generalize to an environmanet that does not resamble the original one. they do not offer a way to train or to use such a model when we do not have available labeled training data on the environemnt which we will operate in. 	
 	
-	- the paper assumes perfectly known results from the motion model(deterministic) and perfect localization and mapping of the surrounding, which greatly reduces the uncertainty, and prefect data association, and uses that to predict the correlation. but in fact in real measurements those are random variables, and they might benefit from the objects in the surrounding.
-	***EXPLORE 1*** - because it is in the course material.
+	\subsection{Notes and Future Research}
 	
-	*weak point*
+	*\textbf{First of all} We want to incorporate what that we have learned in the course and the papers, and draw some conclusions.
+	In the papers, the SLAM problem is assumed to be perfectly solved. That is usually not the case, we still have some uncertainty about the robot and object's locations, and that also increases the level of uncertainty in the classification with this method, because we use the robot's location in modeling the correlation, so when our location has some uncertainty, this will add to the total uncertainty of the problem.
 	
-	- problem with both articles: to train the model we assume that we have training data of the exact same scene from before hand, but this is usually not the case, and the correlations usually highly depend on the environment(for example, different shadows, or topology of the ground) and could not be learned unless we have the exact or similar scene, and it does not generalizes ***is it correct?***
-	***EXPLORE 2*** - this is a very interesting weak point.
+	Another problem that we need to deal with, is that when our location and the object's relative location is uncertain, this will eventually lead to data association problems, i.e. thinking that 2 different object hypothesis are comming from the same object, - this might lead to the wrong classification of at least one object(if they are not of the same class), with high uncertainty, even if the actual classifier preformed perfectly.
 	
-	- the papers assume that the decision actions(deciding is there an object in some place or not) is independent on the path planning, and could be done in the end of the process. but what if there beeing or not being an objects in a certain spot does relate to the motion planning? (like if the objects are things that we want to avoid like land mines, or things that have meaning about the way we should plan like traffic signs, or determinme the objective, like finding a halipad to land on?) 
-	***DESCRIBE SHORTLY***
+	or oppisite, that we think that one object is actually 2 differnt ones, this will lead to at least one false positive result.
 	
-	- what about a classifier that directly takes into account environmental features that might affect its predictions, when building such a classifier this should be more fitting to do, since we know about the inner workings of the classifier and model that more accurately given that knowledge, and incorporate that into the training, and give us also a measure of uncertainty? this seems more of the natural thing to do. state of the art in classifier technology has greatly improved in recent years since the papers were written. how this can change the results attained in the papers?
-	***EXPLORE 5*** - very interesting
+	in the contrary, if we do not assume that SLAM is solved while traiying to takle this problem, we can benefit from that.
+	by incorporaing all the observations, including the observed object's and their classes, we gain another layer of information to our optimization problem, this will give us more information to check if our matches are correct, and to better estimating loop closers(accepting or rejecting), by using the extra information from class that might match or not. 
 	
-	- In paper [2] we only address object hypothesis that we encounter by chance. Is it good? what if we miss an object all together?
-	***DESCRIBE SHORTLY***
+	the active exploration part can also be used to reduce uncertainty in the SLAM part of the problem.
 	
-	*aspects that could be improved*
+	this also can lead to the problem descussed in the next part, when the robot hypothesises that nearby cells are with the same object, and we assume independence between near by cell, but if the localization is not known, different cells can get signals from the same object, that because of drifts is sometimes estimated to be in one cell, and the next time in a near by cell.
 	
-	- is the position from which observations are taken really the best parameter to use to model the correlation? I think that it is not the case, it just happens that the things that determine the correlation (like relative position and orientation to the object, lighting and occlusions, other environment features that change over time) that can be estimated directly without going through the position.
-	***EXPLORE 3*** - also a very interesting point to explore.	
+	*both papers assume that \textbf{different object hypothesis / grid cells are uncorrelated}, and only assume correlations between different observations of the same object / grid cell. even that it is usually not the case, in search and rescue it is reasonable to assume that victims should be nearby, that text will be clustered in space, and that a computer, a keyboard and a chair will probably come together, or as explained above, the same object might appear twice as 2 different objects due to bad data association, and we need to think how might we merge this 2 different hypothesis in the future if we gather more information that gets us better localization. it might be valuable not to neglect this correlation.
+	
+	*\textbf{decisions are independent of path planning} - paper [2] assume that the decision actions(deciding is there an object in some place or not) is independent on the path planning, and could be done in the end of the process. but what if there beeing or not being an objects in a certain spot does relate to the motion planning? (like if the objects are things that we want to avoid like land mines, or things that have meaning about the way we should plan like traffic signs, or determinme the objective, like finding a halipad to land on?)
 		
-	*possible directions for future research*
-	
-	- both papers assume that different object hypothesis / grid cells are uncorrelated, and only assume correlations between different observations of the same object / grid cell. even that it is usually not the case, in search and rescue it is reasonable to assume that victims should be nearby, that text will be clustered in space, and that a computer, a keyboard and a chair will probably come together. it might be valuable not to neglect this correlation.
-	***EXPLORE 4***
-	
-	- what happens when we consider multiple object classes, and not only a single class? does it scale?
-	***DESCRIBE SHORTLY***
-	
-	- how to integrate different observation models that have significantly different correlation scheme?
-	***DESCRIBE SHORTLY***
-	
-	- what about changing environment, and object hypothesis that might change over time? (moving objects for example)
-	***DESCRIBE SHORTLY***
-	
-	- how do we model the future observations given the current state for planning purposes? the first paper criticizes the second one for assuming in that step that future observations are uncorelated to one another in the planning phase, which is a bit wrong.  
-	***DESCRIBE SHORTLY***
-	
-	- both papers use a GP for the observation model, and for predicting the correlations. might other methods offer greater benefit? should try out and compare
-	***DESCRIBE SHORTLY***
-	
 	% TODO: look at how to add refrences
 	
 	% TODO: how to reference equations
