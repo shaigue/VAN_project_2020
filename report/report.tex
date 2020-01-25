@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{graphicx} 
 
 \title{VAN final project report}
 \date{2020-05-01}
@@ -118,7 +119,7 @@
 	\end{itemize}
 
 	\subsubsection{Problem definition}
-	The aim of this article is to estimate the probability of finding some object(for example, a victim in a search and rescue mission) in a given location in space. It tries to so without assuming that different observation of the same location are independent of each other. We split the search area to grid cells - $\mathcal{G}$, transforming it to an estimation problem of a finite number of random variables - the probability for each $g \in \mathcal{G}$ to contain an object $\delta_g$, given all the past observations of this specific grid cell until time $t$, $D_g^t$, i.e. estimating $p(\delta_g|D_g^t)$. And to update that belief given new observation of the same grid cell $d_g^{t_1}$ on some time in the future, $t_1>t$. \\
+	The aim of this article is to estimate the probability of finding some object(for example, a victim in a search and rescue mission) in a given location in space. It tries to so without assuming that different observation of the same location are independent of each other. We split the search area to grid cells - $\mathcal{G}$, transforming it to an estimation problem of a finite number of random variables - the probability for each $g \in \mathcal{G}$ to contain an object $\delta_g$, given all the past observations of this specific grid cell until time $t$, $D_g^t$, i.e. estimating $p(\delta_g|D_g^t)$, with considering the distribution over the entire data that we have collected, and not by assuming each $d^t_g$ for different $t'$s are independent. \\
 	
 	We need to consider how to model the correlation between different observations of the same object. The paper assumes independence between different grid cells.
 	To improve our estimation we need to choose a path such that the overall uncertainty of the scene will be minimized.
@@ -157,6 +158,7 @@
 	\end{equation}
 	[to simplify, we will write $a$ instead of $a_{1:Q}$ and the same for $Y,y$]
 	
+	Intuitively, this means that we want to choose a path that considers both operational costs, like fuel or battery life/time, and estimation error costs.
 	To do so we need a way to model the posterior $Y|X^{0:k}$, both \textbf{(a)} after we have the available data, i.e. the history of measurements from time 0 to k -$\mathcal{T}^k$, to estimate the current belief,
 	and \textbf{(b)} a way to generate future measurements to estimate how the postirior will change after taking the trajectory.
 	
@@ -230,42 +232,106 @@
 	
 	
 	\section{Implementation}
-	% TODO: Demonstrate the main results of the paper(s) using simulation and/or real-world experiments. You are free to choose the programming language as well as using open source software. This also includes testing the approaches under different conditions than those originally assumed in the paper(s), as well as extending approaches to unsupported settings/scenarios.
+	
+	We tried to explore the papers result, that not assuming observation independence, we get more accurate results, and less overconfidence in our result, if we have no reason to do so.
+	For that we built a simulation of an environment(not so true physically, but relates to real phenomena), imitating different lighting conditions, obstacles that block the line-of-sight, aliasing - points that look like the searched for object from a certain angels.
+	We preformed some qualitative experiments, to get some intuition of how differently the models process observations, and some quantitative experiments to see if there is some significant difference in their performance.
+	
+	\subsection{Implementation details}
+	We used \textbf{python} for our implementation, and we have 3 main parts - \textbf{(a) Field}, \textbf{(b) Model}, \textbf{(c) Agent}.
+	We used standard python libraries, \textbf{numpy, scipy, sklearn, matplotlib}.     
+	\begin{itemize}
+		\item Field - this represents the field on which our agent is placed in. It is a grid like in paper [1], where each grid cell can contain an object of not. it produces the observation in the fallowing equation:
+		\begin{align*}
+		(i,j)\in I = \{(x+x1,y+y1)|-F \leq x1,y1 \leq F\} \\
+		z_{(i,j)} = (I_{object} + Q_{alias})(1 - I_{obstacle}) \cdot Q_{light} \cdot e^{- \gamma r} + \epsilon 
+		\end{align*}
+		where $F$ is Field of view, a parameter, $x,y$ is the position where the observation is taken from, $i,j$ grid cell that is been observed, $I_{object}$ is an indicator of is there an object in that cell,
+		$Q_{alias}$ is the $cos$ of the angle between the line where aliasing is strongest(if there is any otherwise it will be 0) and the robot, $I_{obstacle}$ - indicator of line of sight being blocked by an obstacle, and $Q_{light}$ is the light quantity, [0,1], determined by the distance from a light source,
+		$\gamma$ is a distance decay coefficient, and $r$ is the distance form the robot to the observed cell,
+		and $\epsilon$ is a zero mean normal distributed noise with variance one of the field's parameters. \\
+		The objects are rndomly placed in the field at each run.
+		
+		\item Agent - this is just runs on the field and collects observation, In here it just fallows a simple scanning route of the field to get the observations.
+		
+		\item Model - this is the implementation of the predictive models. one of them is the Naive Bayes model(Independent model) that assumes independence between observations, the other one is the same prediction model described in paper [1], only difference is that the model parameters where chosen by hand and not optimized by training, due to lack of time, but still works good. 
+	\end{itemize}
+
+	\begin{figure}[t]
+		\centering
+		\includegraphics[width=0.7\linewidth, height=0.3\textheight]{../figures/exploring_field}
+		\caption[Exploring the field]{This is an image of the field(top right). 'X' represent the object placment, and black squares the obstacels. The brightness corresponds to the light quantity in each cell. The red stars and arrows indicate aliased points, and the direction where aliasing is strongest. On the other plots a few observations are taken from different places, the color intensity corresponds to the probability of there being an object. Red = object, White = no object}
+		\label{fig:exploringfield}
+	\end{figure}
+
+	\subsection{Qualitative experiments}
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.7\linewidth, height=0.3\textheight]{../figures/ind_vs_corr_field_only}
+		\caption[qualitative experiment field]{This is the field that the experiment run on}
+		\label{fig:indvscorrfieldonly}
+	\end{figure}
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.7\linewidth, height=0.3\textheight]{../figures/ind_vs_corr_independent_agent}
+		\caption[independent model results]{trajectory in red, red level indicates how certain the model is that there is an object at that point}
+		\label{fig:indvscorrindependentagent}
+	\end{figure}
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.7\linewidth, height=0.3\textheight]{../figures/ind_vs_corr_correlated_agent}
+		\caption[Correlated model results]{same as independent}
+		\label{fig:indvscorrcorrelatedagent}
+	\end{figure}
+	We can clearly see that the predictions in the independent model are much sharper, both on accurate ones and accurate ones, and that the correlated model is more conservative about it's estimation, and we can clearly see that even when it makes mistakes, it has some uncertainty to the results. 
+	
+	
+	\subsection{Quantitative experiments}
+	We run 5 experiments, using 5 different setting for the field, with raising complexity.  and for each field, we run 50 times, and average their results.
+	overall we got pretty similar results with the correlated and uncorrelated model, probably because the correlated model parameters were roughly selected, but still we can see that the correlated models preforms slightly better then the independent model. The models are evaluated in terms of accuracy and MSDE.(see graphs)
+	
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.7\linewidth, height=0.3\textheight]{../figures/accuracy_results}
+		\caption[Accuracy results]{we can see that the correlated model slightly outpreforms the independent model}
+		\label{fig:accuracyresults}
+	\end{figure}
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width=0.7\linewidth, height=0.3\textheight]{../figures/MSDE_results}
+		\caption[MSDE results]{we can see a more significant differance with the MSDE values.}
+		\label{fig:msderesults}
+	\end{figure}
+	
 	
 	\section{Discussion and Conclusions}
-	% TODO: Summarize the report and provide some criticism: identify weak points, unrealistic assumptions or aspects that could be improved and suggest possible directions (or extensions) for future research
+	
 	\subsection{Summery}
 	In this report we examined 2 articles written on the subjects `active exploration` and `observation correlation modeling`,
-	in the context of robust object detection. From the papers results we can clearly see that it is beneficial in terms of classification accuracy to consider (a) the planning aspect, by including in the objective function(that defines our optimal plan) a term that relates to the uncertainty in the class estimations, and (b) in integrating new observation, while not assuming that observations are completely independent given the robot's state. Both papers give some rough models that can be used for this, but probably too simplistic at their current form.
+	in the context of robust object detection. From the papers results we can clearly see useful to drop the assumption that observations are uncorrelated.
+	Both in (a) planning and (b) observation modeling. Both papers give us methods that can be used for this, but probably too simplistic at their current form, and can be improved in future work.
 	
 	
 	\subsection{Criticism}
-	*\textbf{Model Training} - both papers train their models on data that is very simmilar to that that they test on, 
-	which is not optimal, as we cannot expect to have training data available of every environment, and each environment has it's own specific correlations model. This is some how true in paper [1], but there only the parameters of the GP are learned, so this model can generalize more easily, but in paper [2] the resulting model is higly fitted to a spacific enfironment, and will not generalize to an environmanet that does not resamble the original one. they do not offer a way to train or to use such a model when we do not have available labeled training data on the environemnt which we will operate in. 	
+	\textbf{Model Training} - both of the papers train their model on the exact(or very similar) environment of the testing experiment, but in most cases we cannot be guaranteed to have such training data available, and we will need to train our models in another surrounding, and try to generalize. The papers did not test to see how much does the learned model generalizes.  
 	
 	\subsection{Notes and Future Research}
 	
 	*\textbf{First of all} We want to incorporate what that we have learned in the course and the papers, and draw some conclusions.
-	In the papers, the SLAM problem is assumed to be perfectly solved. That is usually not the case, we still have some uncertainty about the robot and object's locations, and that also increases the level of uncertainty in the classification with this method, because we use the robot's location in modeling the correlation, so when our location has some uncertainty, this will add to the total uncertainty of the problem.
+	In the papers, the SLAM problem is assumed to be perfectly solved. That is usually not the case, we still have some uncertainty about the robot and objects locations. That increases the level of uncertainty in the classification with this method, because we use the robot's location in modeling the correlation, so when our location is uncertain, this will add to the total uncertainty.
 	
-	Another problem that we need to deal with, is that when our location and the object's relative location is uncertain, this will eventually lead to data association problems, i.e. thinking that 2 different object hypothesis are comming from the same object, - this might lead to the wrong classification of at least one object(if they are not of the same class), with high uncertainty, even if the actual classifier preformed perfectly.
+	Another problem is that when our location and the object's relative location is uncertain, we will eventually get data association problems, i.e. thinking that 2 different objects are the same one, - this might lead to the wrong classification of at least one object(if they are not of the same class), with high uncertainty, even if the actual classifier preformed perfectly.
+	or we can mistaken that one object is 2 different ones, this will lead to at least one false positive result.
 	
-	or oppisite, that we think that one object is actually 2 differnt ones, this will lead to at least one false positive result.
-	
-	in the contrary, if we do not assume that SLAM is solved while traiying to takle this problem, we can benefit from that.
-	by incorporaing all the observations, including the observed object's and their classes, we gain another layer of information to our optimization problem, this will give us more information to check if our matches are correct, and to better estimating loop closers(accepting or rejecting), by using the extra information from class that might match or not. 
+	on the contrary, if we do not assume that SLAM is solved We can benefit from that.
+	By incorporating all the observations, including the observed object's and their classes, we gain another layer of information to use in our optimization, this will give us more ways to check if our matches are correct, and to better estimate loop closers(accepting or rejecting), by using the extra information from class that might match or not. 
 	
 	the active exploration part can also be used to reduce uncertainty in the SLAM part of the problem.
 	
-	this also can lead to the problem descussed in the next part, when the robot hypothesises that nearby cells are with the same object, and we assume independence between near by cell, but if the localization is not known, different cells can get signals from the same object, that because of drifts is sometimes estimated to be in one cell, and the next time in a near by cell.
+	One of the possible data association problems that might arise is when the same object, because of slight drifts in pose estimation appears in 2 adjacent grid cells, this is very likely, and this destroys our assumption that different cells are uncorrelated.  \\
 	
-	*both papers assume that \textbf{different object hypothesis / grid cells are uncorrelated}, and only assume correlations between different observations of the same object / grid cell. even that it is usually not the case, in search and rescue it is reasonable to assume that victims should be nearby, that text will be clustered in space, and that a computer, a keyboard and a chair will probably come together, or as explained above, the same object might appear twice as 2 different objects due to bad data association, and we need to think how might we merge this 2 different hypothesis in the future if we gather more information that gets us better localization. it might be valuable not to neglect this correlation.
+	Both papers assume that \textbf{different object hypothesis / grid cells are uncorrelated}, and only assume correlations between different observations of the same object / grid cell. even that it is usually not the case, in search and rescue it is reasonable to assume that victims will be next to each other, that a computer, a keyboard and a chair will probably come together, or as explained above, the same object might appear twice as 2 different objects due to bad data association, and we need to think how might we merge this 2 different hypothesis in the future if we gather more information that gets us better localization. It might be valuable not to neglect this correlation. \\
 	
-	*\textbf{decisions are independent of path planning} - paper [2] assume that the decision actions(deciding is there an object in some place or not) is independent on the path planning, and could be done in the end of the process. but what if there beeing or not being an objects in a certain spot does relate to the motion planning? (like if the objects are things that we want to avoid like land mines, or things that have meaning about the way we should plan like traffic signs, or determinme the objective, like finding a halipad to land on?)
-		
-	% TODO: look at how to add refrences
-	
-	% TODO: how to reference equations
-	
+	\textbf{decisions are independent of path planning} - paper [2] assume that the decision actions(deciding is there an object in some place or not) is independent on the path planning, and could be done in the end. But what if 'is there an object' question's answer affects our objective / path planning? examples for that are: if the objects are things that we want to avoid like land-mines, or things that have meaning about the way we should move like traffic signs, or determine the objective, like finding a helipad to land on? It is valuable to tackle this question.	
   
 \end{document}
