@@ -8,35 +8,18 @@
 \author{Shai Guendelman, Avnum Hanuhov}
 
 \begin{document}
-	% this is how to comment with '%'
-	% this produces the title in a single front page
 	\maketitle
 	\newpage
 	
-	% sections, subsections, and subsubsections are of 
-	% different topics.
-	% paragraphes and subparagraphes are not numbered
-	% this is a section with latex examples. delete this before 
-	% final draft, but keep to use as referance
-	\section{Introduction and overview}
-	% TODO: Introduce the paper(s) topic. Describe how the paper fits in with the contents of this course, provide a brief background (literature review) and explain why the problem is important
-	Papers "Observation Modelling for Vision-Based Target Search by Unmanned Aerial Vehicles, W.T. Luke Teacy, Simon J. Julier, Renzo De Nardi, Alex Rogers, Nicholas R. Jenning"[1] and "Modelling Observation Correlations for Active Exploration and Robust Object Detection by Javier Velez, Garrett Hemann, Albert S. Huang, Ingmar Posner and Nicholas Roy"[2], address the issues in existing state of the art observation models in classification and detection of camera images. \\ \\
-	Existing solutions describe an idealized model where different observations of the same object or area are considered independent, which in turn leads to misleading or over-confident results. \\
-	The problem in these approaches is in the performance of their algorithms, they result in wrong classification of objects, inaccurate modelling of the environment and non optimal robot movement. \\
-	The papers suggest new models in which observations are treated as correlated. However, the implementation suggested is different between them. \\ \\
-	The work of W.T. L.Teacy[1] et al. refers to the issues listed above with regards to the performance of UAV's in gathering information about objects on the ground. To address these issues, they developed a Gaussian Process based observation model that characterises the correlation between classifier outputs as a function of UAV position. They then use this to fuse classifier observations from a sequence of images and to plan the UAV's movement. \\
-	The work of J.Velez et al. presents an online planning algorithm which learns an explicit model of the spatial dependence of object detection and generates plans which maximize the expected performance of the detection, and by extension the overall plan performance. \\ \\	
-	The course's purpose is to present and discuss different methods that answer the key questions in autonomous mobile systems: \\
-	1. Where am I? \\
-	2. What is the surrounding environment?\\
-	3. What should I do next? Where am I going?\\
-	4. How to get there?\\
-	The goal of the papers listed above is to present new and improved models to answer these questions with higher accuracy, by treating observations as correlated. \\ \\
 	
-	\section{Preliminary material and problem formulation}
-	% TODO: Present a description of relevant notations and definitions, define mathematically the problem addressed by the paper(s), and summarize any preliminary mathematical material used in the paper(s).
-	In this work we address 2 papers written on the subject of \textbf{Active sensing and Observation Correlation Modelling},
-	we will split our discussion to the 2 papers, paper (1) will refer to \textbf{Observation Modelling for Vision-Based Target Search by Unmanned Aerial Vehicles}, and paper (2) will refer to \textbf{Modelling Observation Correlation for Active Exploration and Robust Object Detection}.
+	\section{Introduction and overview}
+	Papers "Observation Modelling for Vision-Based Target Search by Unmanned Aerial Vehicles, W.T. Luke Teacy, Simon J. Julier, Renzo De Nardi, Alex Rogers, Nicholas R. Jenning"[1] and "Modelling Observation Correlations for Active Exploration and Robust Object Detection by Javier Velez, Garrett Hemann, Albert S. Huang, Ingmar Posner and Nicholas Roy"[2], examine the assumption that observations are independent given the state is known.
+	Assuming independence between observations leads to wrong and over-confident results as it is clear that this assumption is far from being true.
+	The papers suggest new models in which observations are treated as correlated. 
+	The work of W.T. L.Teacy[1] et al. refers to the issues listed above with regards to the performance of UAV's in gathering information about objects on the ground. To address these issues, they developed an observation model that characterizes the correlation between classifier outputs as a function of the positions that they were taken from. They then use this to fuse classifier observations from a sequence of images and to plan the UAV's movement. \\
+	The work of J.Velez et al. presents an online planning algorithm which learns a model of the spatial dependence of object detection and generates plans which tries to maximize the detection accuracy.
+	
+	\section{Problem formulation}
 	\subsection{paper (1)}
 	
 	\subsubsection{Notations and definitions}
@@ -85,9 +68,6 @@
 		\item $z^k$ - the observation obtained in time $k$ from view point $x^k$. (big $Z$ refers to the Random Variable). The domain is not specified in the paper, could be some classifier score, or something else.
 		\item $\mathcal{T}^k = {(x^1,z^1),...,(x^k,z^k)}$ - The history of all view point and observations pairs.
 		\item $\Psi$ - Symbol for the environment's RV necessary for accurately model the sensor's observation generation.
-		\item $\alpha = z^k \perp \mathcal{T}^{k-1}$ - RV that means "is the k'th observation correlated with the history of observations?"
-		\item $PLANNED_{disk}$ - The planning algorithm presented in the paper, using the static disk sensor model.
-		\item $PLANNED$ - The planning algorithm presented in the paper, using the dynamic time-vatying correlation model.
 	\end{itemize}
 	\subsubsection{Problem formulation}
 	The goal is:
@@ -123,26 +103,19 @@
 	\subsection{Mathematical material used in the papers}
 	\begin{itemize}
 		\item Gaussian Process - The Mathematical definition of a Gaussian Process (GP) is:
-		 a set of R.V.'s $\{X_i\}_{i \in I}$ such that for every finite subset $J \subseteq I$, $\{X_i\}_{i \in J}$ is multivariate normal.
-		 Here it is used as a method for modeling. This is done by assuming that all of the sampled data is distributed as a GP, with some covariance and mean kernel functions that given the index of the R.V. 
-		 (e.g., if the R.V. is $X_t$ then the index is $t$), we can have the mean and covariance. for example: \\
+		 a set of R.V.'s $\{X_i\}_{i \in I}$ such that for every finite subset $J \subseteq I$, $\{X_i\}_{i \in J}$ is multivariate normal. for example: \\
 		 Let $I=[0,\inf]$ indicate the time, and ${X_i} \sim \mathcal{GP}(m(\cdot), k(\cdot,\cdot))$, so for each finite set of time-points
-		 $\{X_{t_1},X_{t_2},...,X_{t_n}\} \sim N(\mu,\Sigma)$ , and the mean and covariance are determined by the kernel functions 
-		 $m$ and $k$, such that $\mu_i = m(t_i)$, and $\Sigma_{i,j} = k(t_i, t_j)$. We can use the GP to predict the value of $X_t$ when we have known data-points $\{x_{t_1},x_{t_2},...,x_{t_n}\}$  by considering the joint distribution of $\{X_{t_1},X_{t_2},...,X_{t_n},X_t\}$, 
-		 and then using Schur's compliment to get the conditional distribution $p(X_t|X_{t_1},X_{t_2},...,X_{t_n})$, and estimate the mean and uncertainty(covariance) of $X_t|data$.
+		 $\{X_{t_1},X_{t_2},...,X_{t_n}\} \sim N(\mu,\Sigma)$ , where the mean and covariance are determined by the kernel functions 
+		 $m$ and $k$, such that $\mu_i = m(t_i)$, and $\Sigma_{i,j} = k(t_i, t_j)$. 
 		\item Some Information Theory concepts - 
 		
 		\textbf{Entropy} - given a R.V. $X$, its Entropy $H(X)$ is given by $H(X)=E[-log(p(X))]$. It is a measure of how unpredictable a R.V. is. \\ 
 		
-		\textbf{Conditional Entropy} - $H(X|Y)$  this is the same as entropy, just now it is for the conditioned R.V., also fallows the formula $H(X,Y)=H(X|Y) + H(Y)$, and means "the Entropy of $X$ after we have know $Y$".
-		This relation always holds: $H(X|Y) \leq H(X)$. \\
+		\textbf{Conditional Entropy} - $H(X|Y)$  this is the same as entropy, just now it is for the conditioned R.V., also fallows the formula $H(X,Y)=H(X|Y) + H(Y)$, and means "the Entropy of $X$ after we have know $Y$".\\
 		  
 		\textbf{Mutual Information} - $I(X;Y)$, it is defined as $I(X;Y)=\mathbb{E}\left[log\frac{p(x,y)}{p(x)p(y)}\right]$ it is  a measure of how informative the state of $Y$ is with respect to $X$ (it is symmetric). If $X,Y$ are independent, it will be 0, otherwise it will be strictly positive.
-		It also always holds that: $I(X;Y)=H(X)-H(X|Y)$, This means that the M.I. is the difference of how unpredictable $X$ is without and with knowing $Y$.  
-		
-		\item \textbf{MSDE} - Mean Squared Detection Error - used for evaluating the estimations result's in paper[1].
-		
-		$$MSDE = \frac{1}{|\mathcal{G}|}\sum_{g \in \mathcal{G}}[\delta_g - P(\delta_g = 1|D_g^t)]^2 $$		
+		It also always holds that: $I(X;Y)=H(X)-H(X|Y)$. 
+			
 	\end{itemize}
 	
 	% math formulation of the problems
@@ -173,28 +146,25 @@
 	 
 	\section{Implementation}
 	
-	We tried to explore the papers result, that not assuming observation independence, we get more accurate results, and less overconfidence in our result, if we have no reason to do so.
-	For that we built a simulation of an environment(not so true physically, but relates to real phenomena), imitating different lighting conditions, obstacles that block the line-of-sight, aliasing - points that look like the searched for object from a certain angels.
+	We built a simulation of an environment imitating different lighting conditions, obstacles that block the line-of-sight, aliasing - points that look like the searched for object from a certain angels.
 	We preformed some qualitative experiments, to get some intuition of how differently the models process observations, and some quantitative experiments to see if there is some significant difference in their performance.
 	
 	\subsection{Implementation details}
-	We used \textbf{python} for our implementation, and we have 3 main parts - \textbf{(a) Field}, \textbf{(b) Model}, \textbf{(c) Agent}.
-	We used standard python libraries, \textbf{numpy, scipy, sklearn, matplotlib}.     
+	We have 2 main parts - \textbf{(a) Field}, \textbf{(b) Model}.
+	We used standard \textbf{python} libraries, \textbf{numpy, scipy, sklearn, matplotlib}.     
 	\begin{itemize}
 		\item Field - this represents the field on which our agent is placed in. It is a grid like in paper [1], where each grid cell can contain an object of not. it produces the observation in the fallowing equation:
 		\begin{align*}
 		(i,j)\in I = \{(x+x1,y+y1)|-F \leq x1,y1 \leq F\} \\
 		z_{(i,j)} = (I_{object} + Q_{alias})(1 - I_{obstacle}) \cdot Q_{light} \cdot e^{- \gamma r} + \epsilon 
 		\end{align*}
-		where $F$ is Field of view, a parameter, $x,y$ is the position where the observation is taken from, $i,j$ grid cell that is been observed, $I_{object}$ is an indicator of is there an object in that cell,
+		where $F$ is Field of view, $x,y$ is the position where the observation is taken from, $i,j$ grid cell that is been observed, $I_{object}$ is an indicator of is there an object in that cell,
 		$Q_{alias}$ is the $cos$ of the angle between the line where aliasing is strongest(if there is any otherwise it will be 0) and the robot, $I_{obstacle}$ - indicator of line of sight being blocked by an obstacle, and $Q_{light}$ is the light quantity, [0,1], determined by the distance from a light source,
 		$\gamma$ is a distance decay coefficient, and $r$ is the distance form the robot to the observed cell,
-		and $\epsilon$ is a zero mean normal distributed noise with variance one of the field's parameters. \\
-		The objects are rndomly placed in the field at each run.
+		and $\epsilon$ is a zero mean normal distributed noise.
+		The objects were randomly placed in the field at each run.
 		
-		\item Agent - this is just runs on the field and collects observation, In here it just fallows a simple scanning route of the field to get the observations.
-		
-		\item Model - this is the implementation of the predictive models. one of them is the Naive Bayes model(Independent model) that assumes independence between observations, the other one is the same prediction model described in paper [1], only difference is that the model parameters where chosen by hand and not optimized by training, due to lack of time, but still works good. 
+		\item Model - this is the implementation of the predictive models. one of them is the Naive Bayes model(Independent model) that assumes independence between observations, the other one is the same prediction model described in paper [1]. model parameters where chosen by hand and not optimized by training, due to lack of time. 
 	\end{itemize}
 
 	\begin{figure}[t]
@@ -205,42 +175,24 @@
 	\end{figure}
 
 	\subsection{Qualitative experiments}
-	\begin{figure}
+	\begin{figure}[!h]
 		\centering
-		\includegraphics[width=0.7\linewidth, height=0.3\textheight]{../figures/ind_vs_corr_field_only}
-		\caption[qualitative experiment field]{This is the field that the experiment run on}
-		\label{fig:indvscorrfieldonly}
+		\includegraphics[width=0.9\linewidth, height=0.3\textheight]{../figures/independent_vs_correlated1}
+		\caption{(center)This is the field, (left) this is the correlated model, (right) independent model}
+		\label{fig:indvscorr}
 	\end{figure}
-	\begin{figure}
-		\centering
-		\includegraphics[width=0.7\linewidth, height=0.3\textheight]{../figures/ind_vs_corr_independent_agent}
-		\caption[independent model results]{trajectory in red, red level indicates how certain the model is that there is an object at that point}
-		\label{fig:indvscorrindependentagent}
-	\end{figure}
-	\begin{figure}
-		\centering
-		\includegraphics[width=0.7\linewidth, height=0.3\textheight]{../figures/ind_vs_corr_correlated_agent}
-		\caption[Correlated model results]{same as independent}
-		\label{fig:indvscorrcorrelatedagent}
-	\end{figure}
-	We can clearly see that the predictions in the independent model are much sharper, both on accurate ones and accurate ones, and that the correlated model is more conservative about it's estimation, and we can clearly see that even when it makes mistakes, it has some uncertainty to the results. 
+	We can clearly see that the predictions in the independent model are much sharper, both on good ones and bad ones, and that the correlated model is more conservative about it's estimation. 
 	
 	
 	\subsection{Quantitative experiments}
-	We run 5 experiments, using 5 different setting for the field, with raising complexity.  and for each field, we run 50 times, and average their results.
-	overall we got pretty similar results with the correlated and uncorrelated model, probably because the correlated model parameters were roughly selected, but still we can see that the correlated models preforms slightly better then the independent model. The models are evaluated in terms of accuracy and MSDE.(see graphs)
+	We run 5 experiments, using 5 different setting for the field, with raising complexity.  For each field, we run 50 times, and average their results.
+	We got pretty similar results with the correlated and uncorrelated model, probably because the correlated model parameters were roughly selected, but still we can see that the correlated models preforms slightly better then the independent model. The models are evaluated in terms of accuracy and MSDE.(see graphs)
 	
-	\begin{figure}
+	\begin{figure}[!h]
 		\centering
-		\includegraphics[width=0.7\linewidth, height=0.3\textheight]{../figures/accuracy_results}
-		\caption[Accuracy results]{we can see that the correlated model slightly outpreforms the independent model}
-		\label{fig:accuracyresults}
-	\end{figure}
-	\begin{figure}[h]
-		\centering
-		\includegraphics[width=0.7\linewidth, height=0.3\textheight]{../figures/MSDE_results}
-		\caption[MSDE results]{we can see a more significant differance with the MSDE values.}
-		\label{fig:msderesults}
+		\includegraphics[width=0.9\linewidth, height=0.3\textheight]{../figures/independent_vs_correlated_graphes}
+		\caption{(left) \textbf{accuracy:} we can see that the correlated model slightly outpreforms the independent model, (right) \textbf{MSDE results:} we can also see some difference with the MSDE values.}
+		\label{fig:results}
 	\end{figure}
 	
 	
@@ -257,21 +209,13 @@
 	
 	\subsection{Notes and Future Research}
 	
-	*\textbf{First of all} We want to incorporate what that we have learned in the course and the papers, and draw some conclusions.
 	In the papers, the SLAM problem is assumed to be perfectly solved. That is usually not the case, we still have some uncertainty about the robot and objects locations. That increases the level of uncertainty in the classification with this method, because we use the robot's location in modeling the correlation, so when our location is uncertain, this will add to the total uncertainty.
-	
-	Another problem is that when our location and the object's relative location is uncertain, we will eventually get data association problems, i.e. thinking that 2 different objects are the same one, - this might lead to the wrong classification of at least one object(if they are not of the same class), with high uncertainty, even if the actual classifier preformed perfectly.
-	or we can mistaken that one object is 2 different ones, this will lead to at least one false positive result.
-	
-	on the contrary, if we do not assume that SLAM is solved We can benefit from that.
+	Another problem is that when our location and the object's relative location is uncertain, we will eventually get data association problems. This might lead to the wrong classification of some objects, and high uncertainty, even if the actual classifier preformed perfectly.
+	If we do not assume that SLAM is solved We can benefit from that.
 	By incorporating all the observations, including the observed object's and their classes, we gain another layer of information to use in our optimization, this will give us more ways to check if our matches are correct, and to better estimate loop closers(accepting or rejecting), by using the extra information from class that might match or not. 
-	
 	the active exploration part can also be used to reduce uncertainty in the SLAM part of the problem.
 	
-	One of the possible data association problems that might arise is when the same object, because of slight drifts in pose estimation appears in 2 adjacent grid cells, this is very likely, and this destroys our assumption that different cells are uncorrelated.  \\
+	Both papers assume that \textbf{different object hypothesis / grid cells are uncorrelated}, and only assume correlations between different observations of the same object / grid cell. even that it is usually not the case for example the same object might appear twice as 2 different objects due to bad data association. It might be valuable not to neglect this correlation. \\
 	
-	Both papers assume that \textbf{different object hypothesis / grid cells are uncorrelated}, and only assume correlations between different observations of the same object / grid cell. even that it is usually not the case, in search and rescue it is reasonable to assume that victims will be next to each other, that a computer, a keyboard and a chair will probably come together, or as explained above, the same object might appear twice as 2 different objects due to bad data association, and we need to think how might we merge this 2 different hypothesis in the future if we gather more information that gets us better localization. It might be valuable not to neglect this correlation. \\
-	
-	\textbf{decisions are independent of path planning} - paper [2] assume that the decision actions(deciding is there an object in some place or not) is independent on the path planning, and could be done in the end. But what if 'is there an object' question's answer affects our objective / path planning? examples for that are: if the objects are things that we want to avoid like land-mines, or things that have meaning about the way we should move like traffic signs, or determine the objective, like finding a helipad to land on? It is valuable to tackle this question.	
   
 \end{document}
