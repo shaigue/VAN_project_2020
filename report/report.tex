@@ -78,22 +78,19 @@
 	
 	\section{Introduction and overview}
 	% TODO: Introduce the paper(s) topic. Describe how the paper fits in with the contents of this course, provide a brief background (literature review) and explain why the problem is important
-	Papers "Observation Modelling for Vision-Based Target Search by Unmanned Aerial Vehicles, W.T. Luke Teacy, Simon J. Julier, Renzo De Nardi, Alex Rogers, Nicholas R. Jenning"[1] and "Modelling Observation Correlations for Active Exploration and Robust Object Detection by Javier Velez, Garrett Hemann, Albert S. Huang, Ingmar Posner and Nicholas Roy"[2], address the issues in existing state of the art observation models in classification and detection of camera images. \\
-	
+	Papers "Observation Modelling for Vision-Based Target Search by Unmanned Aerial Vehicles, W.T. Luke Teacy, Simon J. Julier, Renzo De Nardi, Alex Rogers, Nicholas R. Jenning"[1] and "Modelling Observation Correlations for Active Exploration and Robust Object Detection by Javier Velez, Garrett Hemann, Albert S. Huang, Ingmar Posner and Nicholas Roy"[2], address the issues in existing state of the art observation models in classification and detection of camera images. \\ \\
 	Existing solutions describe an idealized model where different observations of the same object or area are considered independent, which in turn leads to misleading or over-confident results. \\
-	The papers suggest new models in which observations are treated as correlated. However, the implementation suggested is different between them. \\
-	
+	The problem in these approaches is in the performance of their algorithms, they result in wrong classification of objects, inaccurate modelling of the environment and non optimal robot movement. \\
+	The papers suggest new models in which observations are treated as correlated. However, the implementation suggested is different between them. \\ \\
+	The work of W.T. L.Teacy[1] et al. refers to the issues listed above with regards to the performance of UAV's in gathering information about objects on the ground. To address these issues, they developed a Gaussian Process based observation model that characterises the correlation between classifier outputs as a function of UAV position. They then use this to fuse classifier observations from a sequence of images and to plan the UAV's movement. \\
+	The work of J.Velez et al. presents an online planning algorithm which learns an explicit model of the spatial dependence of object detection and generates plans which maximize the expected performance of the detection, and by extension the overall plan performance. \\ \\	
 	The course's purpose is to present and discuss different methods that answer the key questions in autonomous mobile systems: \\
 	1. Where am I? \\
 	2. What is the surrounding environment?\\
 	3. What should I do next? Where am I going?\\
 	4. How to get there?\\
-	The goal of the papers listed above is to present new and improved models to answer these questions with higher accuracy, by treating observations as correlated. \\
+	The goal of the papers listed above is to present new and improved models to answer these questions with higher accuracy, by treating observations as correlated. \\ \\
 	
-	The problem in existing approaches is in the performance of their algorithms and in the broad number of assumptions they are making. \\
-	These problems lead to wrong classification of objects, inaccurate modelling of the environment and non optimal robot movement. \\
-	The work of W.T. L.Teacy[1] et al. refers to the issues listed above with regards to the performance of UAV's in gathering information about objects on the ground. To address these issues, they develop a Gaussian Process based observation model that characterises the correlation between classifier outputs as a function of UAV position. They then use this to fuse classifier observations from a sequence of images and to plan the UAV's movement. \\
-	The work of J.Velez et al. presents an online planning algorithm which learns an explicit model of the spatial dependence of object detection and generates plans which maximize the expected performance of the detection, and by extension the overall plan performance. %should I include paper 2 purple?
 	\section{Preliminary material and problem formulation}
 	% TODO: Present a description of relevant notations and definitions, define mathematically the problem addressed by the paper(s), and summarize any preliminary mathematical material used in the paper(s).
 	In this Work we deal we address 2 papers written on the subject of \textbf{Active sensing and Observation Correlation Modelling},
@@ -207,28 +204,28 @@
 	% extra math things
 	\section{Main contribution}
 	% TODO: A detailed discussion of the main results of the paper(s). This should include both a qualitative discussion and a mathematical presentation (i.e. show proofs, preferably in your own style).
-	The first paper by W.T. L.Teacy et al. focused on building a new observation model, that achieved up to 66 percent greater accuracy than existing approaches at detecting objects. \\
-	
-	They treat the search region as a grid and for each cell they hold a set of observations, Dg = {dg|r<=t}.  
-	
-	The goal is to determine the probability that each cell is occupied (DeltaG = 1) or not (DeltaG = 0), and to continually refine these probabilities given visual observations made by the UAV.
-	
-	The goal is to find P(Delta|D)
-	To model the above distribution (the distribution of the target locations given previously observed data) they first model 3 main components: Predictive model, an observation model and a planner.
-	The predictive model computes the posterior probability that each cell is occupied. With the use of Bayes rule this is calculated as follows:
-	<Eq 1 from paper>
-	
-	Observation Modelling: They develop their observation model using a Gaussian Process over classifier scores. For any given cell, g, they model the classifier score sgt as a GP dependent on the UAV's position at the time of observation. Equation x, y, z from the dictionary. \\
-	
-	
-	In the second paper, the authors presented a sensor model that approximates the correlation in observations made from similar vantage points, and an efficient planning algorithm that balances moving to highly informative vantage points with the motion cost of taking detours.
-
-	A Sensor Model for Object Detection:	
-	In order to compute the expected cost of decision actions used in the planning algorithm, the authors of [2] had to estimate the the probability of objects existing in the world given the observations the robot might see while executing the motion plan. This estimation requires a probabilistic model of the object detector because it will allow to infer the distribution over the object given measurements. The viewpoint x, of the robot, must be taken into consideration because sensor characteristic vary as the robot moves around the object. So, the relationship between the object and the measurements and viewpoint can be written explicitly as p(y|z,x).
-	%Need to expand on the observation model and perception fields here
-	
-	
-	
+	The paper "Observation Modelling for Vision-Based Target Search by Unmanned Aerial Vehicles" by W.T. L.Teacy et al. focused on building a new observation model, that achieves up to 66 percent greater accuracy than existing approaches at detecting objects. \\ \\
+	Tests were performed both in a simulation environment and a real world environment. \\
+	For the simulation, they used a computer generated grid with cells chosen randomly to occupy the targets. Once a cell was observed it generated a classifier score that is correlated with its previous observations according to the same type of GP used in the presented observation model. To observe these cells, the UAV was simulated using a myopic planner which explores in a sweep search pattern. The UAV could also change it's altitude which introduced a trade-off between flying high to observe more cells or flying low to get a more detailed observation. That is because when the UAV flies low it can get more different perspectives of the same cell which leads to higher information gain since usually capturing observations from a number of perspectives results in less correlation between the observations. \\ \\
+	The results show that the correlated model managed to outperform the other models tested (independent and class only) in terms of MSDE in probability of target presence. What's impressive is that it performed the best not only when given a high number of observations, but also with a low number of observations. We see that when based on the correlated model, the UAV correctly chose it's flight path to maximise the mutual information between the resulting observation and the unknown target locations. \\ \\
+	For the real world tests, they used data that was collected in advance so checking how the UAV would choose it's flight path did not make sense here, hence it was predetermined. Instead, what was tested here, is how the UAV would maximize the information gain by choosing the best images captured from the predetermined flight path.\\
+	The tests were split into easy cases (clear pictures, low altitude, good lighting etc) and hard cases (people in dense clutter, linear features that could be mistaken for a person).\\
+	In the easy cases all models managed to predict the correct class with near zero error after about 10 observations, but the correlated model took a little longer to get to zero since it avoided unrealistic independence assumptions, meaning it took a more conservative view on the amount of new information provided by each observation. The results from the easy cases show that for easy cases, the choice of model has very little effect. \\
+	In the hard cases the correlated model significantlly outperformed both the independent and class only models which is inline with the results from the simulation. Regardless of the number of observations it always had a lower error and reached close to zero error after 20 observations while the other models struggled to get the same results after as much as 40 observations. \\ \\
+	In "Modelling Observation Correlations for Active Exploration and Robust Object Detection", J. Velez et al. presented a sensor model that approximates the correlation in observations made from similar vantage points, and an efficient planning algorithm that balances moving to highly informative vantage points considering the motion cost of taking detours. \\ \\
+	The results of the designed planning algorithm were presented in both a simulation environment and a real world environment. \\
+	The simulation environment consisted of a robot navigating through an occupancy map, with object detections triggered according to the learned observation model, the processing delay incurred by the object detection was also measured. False positives (non-object perceptual features) were put into the map as well, to check whether the object detection will be triggered.
+	In the simulation, the $PLANNED_{disk}$ algorithm, indicating the algorithm using the static disk sensor model, and the PLANNED algorithm, indicating the algorithm using the dynamic time-varying sensor model, were compared against two other algorithms: A greedy algorithm ($GREEDY_{\beta}$) and a look-ahead algorithm (RTBSS). \\ \\
+	The $PLANNED_{disk}$ algorithm was tested in both a small simulation environment (One door) and a big simulation environment (four doors and six non-door objects). In the small simulation, it achieved the best precision and recall results. However, in the big simulation, it came second to the $GREEDY_{\beta=0.6}$ in the shortest path category while still getting the best recall results, and RTBSS achieved the highest precision accuracy.\\ \\
+	The PLANNED algorithm was also tested in a small simulation (single text sign) and a more complex simulation (2 text signs) environment. \\ 
+	In the small simulation, the importance of a correlated sensor model was shown. The PLANNED algorithm achieved better precision and recall performance than RTBSS. Indeed, RTBSS achieved shorter path lengths but that was because it treats observations as independent, and thus achieved over-confident results, which lead to worse precision-recall performance.  \\
+	In the more complex simulation, the PLANNED algorithm achieved the best precision-recall performance with short path length. RTBSS once again achieved the shortest path length but due to lack of a correlation model, it once again, just like in the small simulation, became overconfident in its belief and performed far worse in terms of precision-recall. \\ \\
+	The real world trials for validating the $PLANNED_{disk}$ and PLANNED algorithms, were conducted on doors and textual signs.
+	The mobile robot used was an autonomous wheelchair equipped with onboard laser range scanners, a Point Grey Bumblebee2 color stereo camera, and an quad-core laptop as the main processing unit. \\
+	In the first experiment the $GREEDY_{\beta=0.8}$ was used as the baseline because it was the best performing algorithm from the ones tested in the simulation. The robot was using the $PLANNED_{disk}$ algorithm. The results show that the $PLANNED_{disk}$ algorithm made the robot's trajectory much shorter while maintaining precision and recall similar to those of $GREEDY_{\beta=0.8}$. On top of that, the algorithm knew how to plan the robot's movement to increase certainty regarding whether an object detected is a door or not while considering motion costs. The robot successfully determined which objects were in fact false positives. \\ \\ 
+	The PLANNED algorithm as well as $GREEDY_{\beta=0.7}$ algorithm.  were tested on textual signs in a dynamic environment. $GREEDY_{\beta=0.7}$ achieved far better results in terms of precision, but had 3 times the path length. That's because the PLANNED algorithm took motion cost into account while greedy algorithm did not and also kept taking observations of an object hypothesis until the belief reached a certain threshold. \\
+	Lastly, the PLANNED and $GREEDY_{\beta=0.7}$ algorithms were put into test again, only this time the trials were ran at night and with very few occlusions in the way (people walking by in the room). Even though it was a different environment, the results were similar to the previous trial. 
+	 
 	\section{Implementation}
 	% TODO: Demonstrate the main results of the paper(s) using simulation and/or real-world experiments. You are free to choose the programming language as well as using open source software. This also includes testing the approaches under different conditions than those originally assumed in the paper(s), as well as extending approaches to unsupported settings/scenarios.
 	
