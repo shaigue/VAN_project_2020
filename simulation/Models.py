@@ -17,19 +17,20 @@
 - density estimation:
     https://scikit-learn.org/stable/modules/density.html
 """
-import numpy as np 
+from abc import ABC, abstractmethod
+from pprint import pprint
+
+import numpy as np
 from matplotlib import pyplot as plt 
 
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.gaussian_process import GaussianProcessClassifier as GPC 
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.naive_bayes import GaussianNB, BernoulliNB
-# later change this so that field will import it
+
+from scipy.stats import multivariate_normal as Gaussian
+
 from Field import Field
-from abc import ABC, abstractmethod
-
-from pprint import pprint
-
 
 def parse_history(history: list) -> dict:
         """ history is a list of tuples:
@@ -153,43 +154,101 @@ class GNB_Fixed(Model):
         return pred
 
 
+
+class GP_corr(Model):
+    """Gaussian Naive Bayes with fixed parameters, according to the 
+        properties of the field.(size, mean = 0,1) and independent noise
+    """
+    def __init__(self, mu_0: float = 0, mu_1: float = 1, scale_x: float = 2,
+     scale_y: float = 2, noise: float = 0.2, sigma: float = 0.75):
+        super().__init__()
+        self.mu_0 = mu_0
+        self.mu_1 = mu_1
+        self.scale_x = scale_x
+        self.scale_y = scale_y
+        self.noise = noise
+        self.sigma = sigma
+        self.L = np.array([[1/scale_x, 0],[0, 1/scale_y]])
+
+    def train(self, field: Field) -> None:
+        super().train(field)
+        # TODO: we might want to modifiy here the parameters, if have time
+
+    def kernel_cov(self, Z1, Z2):
+        """Z1 and Z2 are [x1,y1,s1], [x2,y2,s2], claculates the Squared Exponenetial kernal"""
+        dist = Z1[:2] - Z2[:2]
+        k = self.sigma * np.exp(-1/2 * np.dot(dist,np.dot(self.L,dist)))
+        return k
+
+    def predict(self, history: list) -> np.array:
+        super().predict(history)
+
+        # TODO: implement
+        pred = self.predict_proba(history)
+        pred[pred > 0.5] = 1
+        pred[pred <= 0.5] = 0
+        return pred
+
+    def predict_proba(self, history: list) -> np.array:
+        super().predict_proba(history)
+
+        pred = np.full((self.M, self.N), 0.5)
+
+        Data = parse_history(history)
+
+        for (i,j), data in Data.items():
+            # calculate the covariance and mean matrices
+            n = data.shape[0] # number of samples
+            mean1 = np.full(n, self.mu_1)
+            mean0 = np.full(n, self.mu_0)
+            cov = np.zeros((n,n))
+            for i1 in range(n):
+                for j1 in range(n):
+                    cov[i1,j1] = self.kernel_cov(data[i1],data[j1])
+                    if i1 == j1:
+                        cov[i1,i1] += self.noise
+            S = data[:,2]
+            # calculate the probability for each class
+            S0 = Gaussian(mean0, cov)
+            S1 = Gaussian(mean1, cov)
+            p0 = S0.pdf(S)
+            p1 = S1.pdf(S)
+            # normalize to 1
+            p_total = p0 + p1
+            p1 /= p_total
+            # p0 /= p_total
+            pred[i,j] = p1
+        
+        return pred
+
+
+
 if __name__ == "__main__":
     print("***Models.py main***")
-    # T = np.array([[1,2,3.1], [4,3,1.1], [6,7,11.1]])
-    # T = T[:, 2].reshape(1,-1)
-    # print(T)
 
-    # M = 20
-    # N = 20
+    # M = 10
+    # N = 10
     # F = 4
     # Q = 10
-    # noise_ind = 0.5
+    # noise_ind = 0.2
     # p1 = Q / (M * N)
     # p0 = 1 - p1
 
     # field = Field(M,N,F,Q,noise_ind)
-    # model = GNB_Fixed()
+    # model = GP_corr()
     # model.train(field)
     
     # Z1 = {(1,1): 1, (2,2): 0.1, (4,4): 1.1, (3,4): 1.1}
     # Z2 = {(1,1): 0.9, (2,2): 0.1, (4,4): 1, (4,3): 0.1}
     # Z3 = {(2,2): 0.7, (1,1): 1, (4,4): 1, (3,4): 1.2}
     # history = [((1, 1), Z1), ((2, 2), Z2), ((3, 3), Z3)]
-    # pprint(model.parse_history(history))
-    # print(model.predict(history))
     
-    # gauss_nb = GaussianNB()
-    # gauss_nb.class_prior_ = np.array([p0,p1])
-    # gauss_nb.classes_ = np.array([0, 1])
-    # gauss_nb.sigma_ = np.array([[field.noise_ind],[field.noise_ind]])
-    # gauss_nb.theta_ = np.array([[0],[1]])
-
-    # X = np.array([
-    #     [0.1,0.1,0.1,1,1],
-    #     [0.9,1,1.1,1,0.7],
-    # ])
-    # pprint(gauss_nb.predict_proba(X))
-
+    # H = parse_history(history)
+    # pprint(H)
+    # pred = model.predict_proba(history)
+    # for (x,y) in H.keys(): 
+    #     print(f"{x},{y}: {pred[x,y]}")
+    
 
 # def generate_nb_train_data(field: Field, train_size: int):
 #     """Generates `train_size` scores and true labels.

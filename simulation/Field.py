@@ -3,9 +3,11 @@
 The Field is the class that represents the environment, 
 and produces the observations(noisy and correlated) and classifier scores.
 """
+from pprint import pprint
 
 import numpy as np
-from numpy.random import randint, randn
+from numpy.random import randint, randn, rand
+from numpy.linalg import norm 
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 
@@ -44,15 +46,21 @@ class Field:
         obstacles:      list of obstacles(x,y) that interfer with the field of view. 
                         Observations that are occluded by them will say that there is no object there.
                         if =None then no obsticles are in the scene.
+        
+        num_alias:      number of aliased objects(places in the map that seem like the object in a certain 
+                        direction, but not really are)
+        
+        alias:          The colloction of aliased objects and their directions 
+
     Methods:
         __init__():
         check_occlusions():
 
-
     """
 
     def __init__(self, M, N, F, Q, 
-    noise_ind = 0, range_decay = 0, lights = None, obstacles = None):
+    noise_ind = 0, range_decay = 0, lights = None, obstacles = None,
+    num_alias = 0):
         self.M = M 
         self.N = N
         self.F = F
@@ -61,8 +69,9 @@ class Field:
         self.range_decay = range_decay
         self.lights = lights
         self.obstacles = obstacles
+        self.num_alias = num_alias
 
-        # make a board containing `Q` objects, randomly placed
+        # make a board containing `Q` objects, randomly placed, also aliased objects
         self.randomize_objects()
         
         self.object_grid = np.zeros((self.M, self.N))
@@ -86,22 +95,39 @@ class Field:
 
 
     def randomize_objects(self):
-        self.objects = set()
+        self.objects = set()    # this only containes the objects positions
+        self.alias = dict()     # this contains the alias position and direction the aliasing is strongest 
+        
+        # objects
         while len(self.objects) < self.Q:
             x = randint(0, self.M)
             y = randint(0, self.N)
             if self.obstacles is None or (x,y) not in self.obstacles:
                 self.objects.add((x,y))
+
+        # alias
+        while len(self.alias) < self.num_alias:
+            x = randint(0, self.M)
+            y = randint(0, self.N)
+            if (self.obstacles is None or (x,y) not in self.obstacles) and \
+                (x, y) not in self.objects:
+                
+                theta = rand(2) - 0.5
+                theta = theta / norm(theta)
+
+                self.alias[(x, y)] = theta
+
         
 
-    def check_occlusion(self, x0, y0, x1, y1):
-        """check if there is an obstacle between (x0,y0) and (x1,y1), not inclusive"""
+    def check_occlusion(self, x0: int, y0: int, x1: int, y1: int) -> int:
+        """check if there is an obstacle between (x0,y0) and (x1,y1), not inclusive.
+        if there is returns 1, else 0"""
         
         if self.obstacles is None:
-            return False
+            return 0
 
         if x0 == x1 and y0 == y1:
-            return False
+            return 0
 
         if x0 == x1:
             if y1 < y0:
@@ -109,8 +135,8 @@ class Field:
 
             for y in range(y0, y1+1):
                 if (x0, y) in self.obstacles:
-                    return True
-            return False
+                    return 1
+            return 0
 
         if y0 == y1:
             if x1 < x0:
@@ -118,8 +144,8 @@ class Field:
 
             for x in range(x0, x1+1):
                 if (x, y0) in self.obstacles:
-                    return True
-            return False
+                    return 1
+            return 0
         
         dx = abs(x1 - x0)
         dy = abs(y1 - y0)
@@ -132,7 +158,7 @@ class Field:
             for x in range(x0, x1+1):
                 y_tag = round(y)
                 if (x, y_tag) in self.obstacles:
-                    return True
+                    return 1
                 y += m
         # run on y
         else:
@@ -143,10 +169,30 @@ class Field:
             for y in range(y0, y1+1):
                 x_tag = round(x)
                 if (x_tag, y) in self.obstacles:
-                    return True
+                    return 1
                 x += m
 
-        return False
+        return 0
+
+    def get_alias(self, x0: int, y0: int, x1: int, y1: int) -> float:
+            """Assumes robot is in (x0, y0), and checks if (x1, y1) is an aliasing point.
+            if not, then returns 0, if it is, calculates the `cos(theta)` between the direction 
+            of the strongest aliasing, and the robot's view point, and returns it.
+            (only for positive valuse).
+            
+            Assumes that aliased objects cannot appear with un aliassed objects."""
+            if (x1,y1) == (x0,y0) or (x1,y1) not in self.alias.keys():
+                return 0
+            alias_dir = self.alias[(x1, y1)]
+            line_of_sight = np.array([x0 - x1, y0 - y1])
+            line_of_sight = line_of_sight / norm(line_of_sight)
+            
+            cos_theta = np.dot(line_of_sight, alias_dir)
+            if cos_theta <= 0: 
+                return 0
+                
+            return cos_theta
+
 
     def generate_observation(self, x, y):
         if x < 0 or x >= self.M or y < 0 or y > self.N:
@@ -163,26 +209,23 @@ class Field:
         for x1 in range(start_x, end_x):
             for y1 in range(start_y, end_y):
                 # is there an object?
-                I_y = int((x1,y1) in self.objects) # self.object_grid[x1, y1]
+                I_y = int((x1,y1) in self.objects)
                 # is there occlusion?
-                I_occ = 0
-                if self.check_occlusion(x, y, x1, y1):
-                    I_occ = 1
+                I_occ = self.check_occlusion(x, y, x1, y1)
+                # level of aliasing
+                I_alias = self.get_alias(x, y, x1, y1)
                 # amount of light
                 l = self.light_grid[x1, y1]
                 # distance
                 r = l2_norm(x, y, x1, y1)
-
+                
                 Z[(x1,y1)] = \
-                    (0.5 + (I_y * (1 - I_occ) - 0.5) * l * np.exp(-self.range_decay * r)) + \
-                         0.5 * self.noise_ind * randn()
-                # if Z[(x1,y1)] < 0:
-                #     Z[(x1,y1)] = 0
-                # if Z[(x1,y1)] > 1:
-                #   Z[(x1,y1)] = 1
+                    ((I_y + I_alias) * (1 - I_occ) * l * np.exp(-self.range_decay * r)) \
+                     + self.noise_ind * randn()
         
         return Z
 
+        
 
 
 def plot_field(ax: Axes, field: Field, light: bool = True):
@@ -201,7 +244,6 @@ def plot_field(ax: Axes, field: Field, light: bool = True):
     ax.grid(True)
     ax.set_xticks(range(0, field.M + 1))
     ax.set_yticks(range(0, field.N + 1))
-    ax.set_title("Field")
     
     # plot the limits
     limits_x = [0, 0, field.M, field.M]
@@ -222,6 +264,14 @@ def plot_field(ax: Axes, field: Field, light: bool = True):
         block_x = [(block[0] + 0.5) for block in field.obstacles]
         block_y = [(block[1] + 0.5) for block in field.obstacles]
         ax.scatter(block_x, block_y, s=30, c="k", marker="s")
+    # plot the aliasing and the aliasing directions
+    alias_poses = field.alias.keys()
+    alias_x = [k[0] + 0.5 for k in alias_poses]
+    alias_y = [k[1] + 0.5 for k in alias_poses]
+    directions = np.array(list(field.alias.values()))
+    ax.scatter(alias_x, alias_y, s=20, c="r", marker="*")
+    q = ax.quiver(alias_x, alias_y, directions[:,0],directions[:,1],
+        scale=0.5, scale_units='xy',angles='xy', color='r', alpha=0.5)
     
 
 def plot_observation(ax: Axes, field: Field, Z: dict, x: int, y: int):
@@ -297,11 +347,14 @@ def plot_occlusions(ax: Axes, field: Field, x: int, y: int):
 
 def explore_field(field: Field):
     # print the field
-    fig, axes = plt.subplots(2,2)
+    fig, axes = plt.subplots(2,2,figsize=(15,15))
     plot_field(axes[0,0], field)
-    x1,y1 = 1,1
-    x2,y2 = 5,5
-    x3,y3 = 7,3
+    tx = round(field.M / 3)
+    ty = round(field.N / 3)
+    x1,y1 = tx,ty
+    x2,y2 = field.M - tx,ty
+    x3,y3 = tx,field.N - ty
+
     Z1 = field.generate_observation(x1,y1)
     Z2 = field.generate_observation(x2,y2)
     Z3 = field.generate_observation(x3,y3)
@@ -312,7 +365,6 @@ def explore_field(field: Field):
     # make an observation from the center of the field
 
 def explore_field_occlusions(field: Field):
-    # print the field
     fig, axes = plt.subplots(2,2)
     plot_field(axes[0,0], field)
     x1,y1 = 1,1
@@ -324,20 +376,11 @@ def explore_field_occlusions(field: Field):
     plt.show()
 
 if __name__ == "__main__":
-    # simple field test
-    #f = Field(10, 10, 2, 7)
-    #f = Field(10, 10, 2, 7, lights=[(5,5)], obstacles=[(2,1),(2,2),(2,3)])
-    #f = Field(10, 10, 2, 7, noise_ind=0.3)
-    #f = Field(10, 10, 3, 7, range_decay=0.2)
-    f = Field(30, 30, 3, 7,
-        noise_ind=0.2,
-        range_decay=0.2,
+    f = Field(15, 15, 3, 8,
+        noise_ind=0.1,
+        range_decay=0.1,
         lights=[(5,5)],
-        obstacles=[(3,1),(3,2),(3,3),(3,0),(3,4)])
-    explore_field(f)
-    # explore_field_occlusions(f)
+        obstacles=[(3,1),(3,2),(3,3),(3,0),(3,4),(10,3),(10,4),(10,5),(10,6),(10,7)],
+        num_alias=5)
 
-    # field with noise_ind
-    # field with distance decay
-    # field with lights
-    # field with occlusions
+    explore_field(f)
